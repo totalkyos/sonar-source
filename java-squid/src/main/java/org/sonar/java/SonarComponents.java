@@ -214,7 +214,7 @@ public class SonarComponents implements BatchExtension {
   }
 
   @VisibleForTesting
-  void reportIssueAfterSQ52(AnalyzerMessage analyzerMessage, RuleKey key, InputPath inputPath, Double cost) {
+  synchronized void reportIssueAfterSQ52(AnalyzerMessage analyzerMessage, RuleKey key, InputPath inputPath, Double cost) {
     JavaIssue issue = JavaIssue.create(context, key, cost);
     AnalyzerMessage.TextSpan textSpan = analyzerMessage.primaryLocation();
     if (textSpan == null) {

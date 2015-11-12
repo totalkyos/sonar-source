@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.junit.Test;
 import org.sonar.java.ast.parser.JavaParser;
-import org.sonar.java.ast.visitors.VisitorContext;
 import org.sonar.plugins.java.api.IssuableSubscriptionVisitor;
 import org.sonar.plugins.java.api.JavaFileScanner;
 import org.sonar.plugins.java.api.JavaFileScannerContext;
@@ -32,7 +31,6 @@ import org.sonar.plugins.java.api.tree.ClassTree;
 import org.sonar.plugins.java.api.tree.CompilationUnitTree;
 import org.sonar.plugins.java.api.tree.MethodTree;
 import org.sonar.plugins.java.api.tree.Tree;
-import org.sonar.squidbridge.api.SourceProject;
 
 import java.io.File;
 import java.util.Collections;
@@ -42,8 +40,6 @@ import static org.fest.assertions.Assertions.assertThat;
 
 public class InternalVisitorsBridgeTest {
 
-  private final VisitorContext context = new VisitorContext(new SourceProject("Java project"));
-
   @Test
   public void test_semantic_exclusions() {
     InternalVisitorsBridge visitorsBridgeWithoutSemantic = new InternalVisitorsBridge(Collections.singletonList(new JavaFileScanner() {
@@ -52,7 +48,6 @@ public class InternalVisitorsBridgeTest {
         assertThat(context.getSemanticModel() == null).isTrue();
       }
     }), Lists.<File>newArrayList(), null);
-    visitorsBridgeWithoutSemantic.setContext(context);
     checkFile(contstructFileName("java", "lang", "someFile.java"), "package java.lang; class A {}", visitorsBridgeWithoutSemantic);
     checkFile(contstructFileName("src", "java", "lang", "someFile.java"), "package java.lang; class A {}", visitorsBridgeWithoutSemantic);
     checkFile(contstructFileName("home", "user", "oracleSdk", "java", "lang", "someFile.java"), "package java.lang; class A {}", visitorsBridgeWithoutSemantic);
@@ -82,15 +77,13 @@ public class InternalVisitorsBridgeTest {
         }
       }
     }), Lists.<File>newArrayList(), null);
-    visitorsBridgeWithSemantic.setContext(context);
     checkFile(contstructFileName("java", "lang", "annotation", "Foo.java"), "package java.lang.annotation; class Annotation {}", visitorsBridgeWithSemantic);
     checkFile(contstructFileName("java", "io", "File.java"), "package java.io; class A {}", visitorsBridgeWithSemantic);
     checkFile(contstructFileName("src", "foo", "bar", "java", "lang", "someFile.java"), "package foo.bar.java.lang; class A { void method() { ; } }", visitorsBridgeWithSemantic);
   }
 
   private void checkFile(String filename, String code, InternalVisitorsBridge visitorsBridge) {
-    context.setFile(new File(filename));
-    visitorsBridge.visitFile(parse(code));
+    visitorsBridge.visitFile(parse(code), new File(filename));
   }
 
   private static String contstructFileName(String... path) {

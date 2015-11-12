@@ -21,13 +21,13 @@ package org.sonar.java.ast;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.sonar.sslr.api.RecognitionException;
 import com.sonar.sslr.api.typed.ActionParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.java.JavaConfiguration;
 import org.sonar.java.ast.parser.JavaParser;
-import org.sonar.java.ast.visitors.VisitorContext;
 import org.sonar.java.model.InternalVisitorsBridge;
 import org.sonar.java.model.VisitorsBridge;
 import org.sonar.plugins.java.api.JavaFileScanner;
@@ -42,10 +42,21 @@ import org.sonar.squidbridge.indexer.QueryByType;
 import org.sonar.squidbridge.indexer.SquidIndex;
 
 import javax.annotation.Nullable;
+
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class JavaAstScanner {
@@ -84,34 +95,88 @@ public class JavaAstScanner {
    * @param files
    */
   public void simpleScan(Iterable<File> files) {
-    SourceProject project = (SourceProject) index.search("Java Project");
-    VisitorContext context = new VisitorContext(project);
-    visitor.setContext(context);
-
+    ExecutorService executor = createExecutor();
     ProgressReport progressReport = new ProgressReport("Report about progress of Java AST analyzer", TimeUnit.SECONDS.toMillis(10));
     progressReport.start(Lists.newArrayList(files));
+    Map<File, Future<Void>> results = new LinkedHashMap<>();
+
     for (File file : files) {
-      context.setFile(file);
       try {
+        // TODO: try parallelize this too
         Tree ast = parser.parse(file);
-        visitor.visitFile(ast);
-        progressReport.nextFile();
+        results.put(file, executor.submit(new FileScanner(file, ast)));
       } catch (RecognitionException e) {
         LOG.error("Unable to parse source file : " + file.getAbsolutePath());
         LOG.error(e.getMessage());
 
         parseErrorWalkAndVisit(e, file);
       } catch (Exception e) {
-        throw new AnalysisException(getAnalyisExceptionMessage(file), e);
+        throw new AnalysisException(getSubmissionExceptionMessage(file), e);
+      } finally {
+        // TODO change progress report to not log in this case, but still stop the thread. a cancel() is available in SSLR bridge 2.7.
+        progressReport.stop();
       }
     }
+
+    waitTermination(executor, results);
     progressReport.stop();
+  }
+
+  private void waitTermination(ExecutorService executor, Map<File, Future<Void>> results) {
+    LOG.info("Waiting termination");
+
+    Iterator<Entry<File, Future<Void>>> it = results.entrySet().iterator();
+    while (it.hasNext()) {
+      //TODO: progress report here. The message of the progress report should be changed.
+      Entry<File, Future<Void>> entry = it.next();
+      try {
+        entry.getValue().get();
+      } catch (Exception e) {
+        throw new AnalysisException(getAnalyisExceptionMessage(entry.getKey()), e);
+      }
+    }
+
+    executor.shutdown();
+    try {
+      boolean success = executor.awaitTermination(5, TimeUnit.MINUTES);
+      if (!success) {
+        executor.shutdownNow();
+        throw new IllegalStateException("Timed out waiting for analysis");
+      }
+    } catch (InterruptedException e) {
+      // send interrupt to other threads too
+      executor.shutdownNow();
+      throw new IllegalStateException("Thread interrupted - analysis cancelled");
+    }
+  }
+
+  private ExecutorService createExecutor() {
+    // think about limited size queue (blocking and waiting if full). It's more complicated to do it than it might look.
+    BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
+    int numThreads = Runtime.getRuntime().availableProcessors() + 1;
+    return new ThreadPoolExecutor(numThreads, numThreads, 0L, TimeUnit.MILLISECONDS, queue, new ThreadFactoryBuilder().setNameFormat("file-scan-%d").build());
+  }
+
+  private class FileScanner implements Callable<Void> {
+    private File file;
+    private Tree ast;
+
+    FileScanner(File file, Tree ast) {
+      this.ast = ast;
+      this.file = file;
+    }
+
+    @Override
+    public Void call() throws Exception {
+      visitor.visitFile(ast, file);
+      return null;
+    }
   }
 
   private void parseErrorWalkAndVisit(RecognitionException e, File file) {
     try {
       // Process the exception
-      visitor.visitFile(null);
+      visitor.visitFile(null, null);
       visitor.processRecognitionException(e);
     } catch (Exception e2) {
       throw new AnalysisException(getAnalyisExceptionMessage(file), e2);
@@ -120,6 +185,10 @@ public class JavaAstScanner {
 
   private static String getAnalyisExceptionMessage(File file) {
     return "SonarQube is unable to analyze file : '" + file.getAbsolutePath() + "'";
+  }
+
+  private static String getSubmissionExceptionMessage(File file) {
+    return "Failed to submit file for analysis : '" + file.getAbsolutePath() + "'";
   }
 
   public void setVisitorBridge(InternalVisitorsBridge visitor) {

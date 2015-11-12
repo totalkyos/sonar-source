@@ -19,6 +19,8 @@
  */
 package org.sonar.java.ast.visitors;
 
+import org.sonar.plugins.java.api.tree.Tree.Kind;
+
 import org.sonar.java.model.JavaTree;
 import org.sonar.java.resolve.SemanticModel;
 import org.sonar.plugins.java.api.JavaFileScanner;
@@ -27,15 +29,15 @@ import org.sonar.plugins.java.api.tree.SyntaxToken;
 import org.sonar.plugins.java.api.tree.SyntaxTrivia;
 import org.sonar.plugins.java.api.tree.Tree;
 
-import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 public abstract class SubscriptionVisitor implements JavaFileScanner {
 
-
   protected JavaFileScannerContext context;
-  private Collection<Tree.Kind> nodesToVisit;
+  private Set<Tree.Kind> nodesToVisit;
   private boolean visitToken;
   private boolean visitTrivia;
   private SemanticModel semanticModel;
@@ -43,19 +45,19 @@ public abstract class SubscriptionVisitor implements JavaFileScanner {
   public abstract List<Tree.Kind> nodesToVisit();
 
   public void visitNode(Tree tree) {
-    //Default behavior : do nothing.
+    // Default behavior : do nothing.
   }
 
   public void leaveNode(Tree tree) {
-    //Default behavior : do nothing.
+    // Default behavior : do nothing.
   }
 
   public void visitToken(SyntaxToken syntaxToken) {
-    //default behaviour is to do nothing
+    // default behaviour is to do nothing
   }
 
   public void visitTrivia(SyntaxTrivia syntaxTrivia) {
-    //default behaviour is to do nothing
+    // default behaviour is to do nothing
   }
 
   @Override
@@ -66,7 +68,8 @@ public abstract class SubscriptionVisitor implements JavaFileScanner {
   }
 
   protected void scanTree(Tree tree) {
-    nodesToVisit = nodesToVisit();
+    nodesToVisit = EnumSet.noneOf(Kind.class);
+    nodesToVisit.addAll(nodesToVisit());
     visitToken = isVisitingTokens();
     visitTrivia = isVisitingTrivia();
     visit(tree);
@@ -94,6 +97,7 @@ public abstract class SubscriptionVisitor implements JavaFileScanner {
     }
   }
 
+  public static long i=0;
   private boolean isSubscribed(Tree tree) {
     return nodesToVisit.contains(tree.kind());
   }
@@ -109,7 +113,7 @@ public abstract class SubscriptionVisitor implements JavaFileScanner {
   private void visitChildren(Tree tree) {
     JavaTree javaTree = (JavaTree) tree;
     if (!javaTree.isLeaf()) {
-      for (Iterator<Tree> iter = javaTree.childrenIterator(); iter.hasNext(); ) {
+      for (Iterator<Tree> iter = javaTree.childrenIterator(); iter.hasNext();) {
         Tree next = iter.next();
         if (next != null) {
           visit(next);
@@ -118,7 +122,7 @@ public abstract class SubscriptionVisitor implements JavaFileScanner {
     }
   }
 
-  public boolean hasSemantic(){
+  public boolean hasSemantic() {
     return semanticModel != null;
   }
 }

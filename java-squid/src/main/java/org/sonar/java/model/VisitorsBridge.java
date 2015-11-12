@@ -36,6 +36,7 @@ import org.sonar.squidbridge.api.CheckMessage;
 import org.sonar.squidbridge.api.SourceFile;
 
 import javax.annotation.Nullable;
+
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
@@ -68,8 +69,8 @@ public class VisitorsBridge extends InternalVisitorsBridge {
   }
 
   @Override
-  protected JavaFileScannerContext createScannerContext(CompilationUnitTree tree, SemanticModel semanticModel, boolean analyseAccessors, SonarComponents sonarComponents) {
-    testContext = new TestJavaFileScannerContext(tree, (SourceFile) getContext().peekSourceCode(), getContext().getFile(), semanticModel, analyseAccessors, sonarComponents,
+  protected JavaFileScannerContext createScannerContext(CompilationUnitTree tree, SemanticModel semanticModel, boolean analyseAccessors, SonarComponents sonarComponents, File file) {
+    testContext = new TestJavaFileScannerContext(tree, new SourceFile(file.getAbsolutePath(), file.getPath()), file, semanticModel, analyseAccessors, sonarComponents,
       getJavaVersion());
     return testContext;
   }

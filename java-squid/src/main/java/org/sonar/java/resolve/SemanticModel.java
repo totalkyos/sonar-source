@@ -68,7 +68,7 @@ public class SemanticModel {
     return semanticModel;
   }
 
-  public void done(){
+  public synchronized void done(){
     bytecodeCompleter.done();
   }
 
