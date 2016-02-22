@@ -22,6 +22,12 @@ package org.sonar.java;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import java.io.File;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import javax.annotation.Nullable;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +37,7 @@ import org.sonar.api.utils.TimeProfiler;
 import org.sonar.graph.DirectedGraph;
 import org.sonar.java.ast.JavaAstScanner;
 import org.sonar.java.ast.parser.JavaParser;
+import org.sonar.java.ast.visitors.ExecutableLinesVisitor;
 import org.sonar.java.ast.visitors.FileLinesVisitor;
 import org.sonar.java.ast.visitors.SyntaxHighlighterVisitor;
 import org.sonar.java.bytecode.BytecodeScanner;
@@ -41,13 +48,6 @@ import org.sonar.java.model.VisitorsBridge;
 import org.sonar.java.se.checks.SECheck;
 import org.sonar.plugins.java.api.JavaResourceLocator;
 import org.sonar.squidbridge.api.CodeVisitor;
-
-import javax.annotation.Nullable;
-import java.io.File;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 public class JavaSquid {
 
@@ -61,8 +61,8 @@ public class JavaSquid {
   private boolean bytecodeScanned = false;
 
   public JavaSquid(JavaConfiguration conf,
-                   @Nullable SonarComponents sonarComponents, @Nullable Measurer measurer,
-                   JavaResourceLocator javaResourceLocator, CodeVisitor... visitors) {
+    @Nullable SonarComponents sonarComponents, @Nullable Measurer measurer,
+    JavaResourceLocator javaResourceLocator, CodeVisitor... visitors) {
     Iterable<CodeVisitor> codeVisitors = Iterables.concat(Collections.singletonList(javaResourceLocator), Arrays.asList(visitors));
     if (measurer != null) {
       Iterable<CodeVisitor> measurers = Collections.singletonList((CodeVisitor) measurer);
@@ -73,28 +73,27 @@ public class JavaSquid {
     Collection<CodeVisitor> testCodeVisitors = Lists.<CodeVisitor>newArrayList(javaResourceLocator);
     if (sonarComponents != null) {
       codeVisitors = Iterables.concat(
-          codeVisitors,
-          Arrays.asList(
-              new FileLinesVisitor(sonarComponents, conf.getCharset()),
-              new SyntaxHighlighterVisitor(sonarComponents, conf.getCharset())
-          )
-      );
+        codeVisitors,
+        Arrays.asList(
+          new FileLinesVisitor(sonarComponents, conf.getCharset()),
+          new ExecutableLinesVisitor(sonarComponents, conf.getCharset()),
+          new SyntaxHighlighterVisitor(sonarComponents, conf.getCharset())));
       testCodeVisitors.add(new SyntaxHighlighterVisitor(sonarComponents, conf.getCharset()));
       classpath = sonarComponents.getJavaClasspath();
       testClasspath = sonarComponents.getJavaTestClasspath();
       testCodeVisitors.addAll(sonarComponents.testCheckClasses());
     }
 
-    //AstScanner for main files
+    // AstScanner for main files
     astScanner = new JavaAstScanner(JavaParser.createParser(conf.getCharset()));
     boolean enableSymbolicExecution = hasASymbolicExecutionCheck(visitors);
     astScanner.setVisitorBridge(createVisitorBridge(codeVisitors, classpath, conf, sonarComponents, enableSymbolicExecution));
 
-    //AstScanner for test files
+    // AstScanner for test files
     astScannerForTests = new JavaAstScanner(astScanner);
     astScannerForTests.setVisitorBridge(createVisitorBridge(testCodeVisitors, testClasspath, conf, sonarComponents, false));
 
-    //Bytecode scanner
+    // Bytecode scanner
     BytecodeContext bytecodeContext = new DefaultBytecodeContext(sonarComponents, javaResourceLocator);
     bytecodeScanner = new BytecodeScanner(bytecodeContext);
     DependenciesVisitor dependenciesVisitor = new DependenciesVisitor(bytecodeContext, graph);
@@ -107,7 +106,7 @@ public class JavaSquid {
 
   private static boolean hasASymbolicExecutionCheck(CodeVisitor[] visitors) {
     for (CodeVisitor visitor : visitors) {
-      if(visitor instanceof SECheck) {
+      if (visitor instanceof SECheck) {
         return true;
       }
     }
@@ -115,14 +114,13 @@ public class JavaSquid {
   }
 
   private static VisitorsBridge createVisitorBridge(
-      Iterable<CodeVisitor> codeVisitors, List<File> classpath, JavaConfiguration conf, @Nullable SonarComponents sonarComponents, boolean enableSymbolicExecution) {
+    Iterable<CodeVisitor> codeVisitors, List<File> classpath, JavaConfiguration conf, @Nullable SonarComponents sonarComponents, boolean enableSymbolicExecution) {
     VisitorsBridge visitorsBridge = new VisitorsBridge(codeVisitors, classpath, sonarComponents, enableSymbolicExecution);
     visitorsBridge.setCharset(conf.getCharset());
     visitorsBridge.setAnalyseAccessors(conf.separatesAccessorsFromMethods());
     visitorsBridge.setJavaVersion(conf.javaVersion());
     return visitorsBridge;
   }
-
 
   public void scan(Iterable<File> sourceFiles, Iterable<File> testFiles, Collection<File> bytecodeFilesOrDirectories) {
     scanSources(sourceFiles);
@@ -161,8 +159,8 @@ public class JavaSquid {
     }
     for (File bytecodeFilesOrDirectory : bytecodeFilesOrDirectories) {
       if (bytecodeFilesOrDirectory.exists() &&
-          (bytecodeFilesOrDirectory.isFile() ||
-              !FileUtils.listFiles(bytecodeFilesOrDirectory, new String[]{"class"}, true).isEmpty())) {
+        (bytecodeFilesOrDirectory.isFile() ||
+          !FileUtils.listFiles(bytecodeFilesOrDirectory, new String[] {"class"}, true).isEmpty())) {
         return true;
       }
     }
@@ -172,7 +170,6 @@ public class JavaSquid {
   public boolean isBytecodeScanned() {
     return bytecodeScanned;
   }
-
 
   public DirectedGraph<Resource, Dependency> getGraph() {
     return graph;
