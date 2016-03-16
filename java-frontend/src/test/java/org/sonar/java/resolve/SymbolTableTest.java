@@ -588,7 +588,7 @@ public class SymbolTableTest {
   public void MethodCall() {
     Result result = Result.createFor("references/MethodCall");
     assertThat(result.reference(10, 5)).isSameAs(result.symbol("target"));
-    assertThat(result.reference(11, 5)).isSameAs(result.symbol("foo"));
+    assertThat(result.reference(11, 5)).isSameAs(result.symbol("foo", 17));
     assertThat(result.reference(30, 5)).isSameAs(result.symbol("fun", 22));
     assertThat(result.reference(42, 5)).isSameAs(result.symbol("bar", 35));
     assertThat(result.reference(52, 5)).isSameAs(result.symbol("bar", 35));
@@ -651,6 +651,18 @@ public class SymbolTableTest {
     assertThat(result.reference(267, 7)).isSameAs(result.symbol("of", 245));
     assertThat(result.reference(268, 7)).isSameAs(result.symbol("of", 250));
     assertThat(result.reference(269, 7)).isSameAs(result.symbol("of", 245));
+
+    assertThat(result.reference(276, 52)).isSameAs(result.symbol("foo", 297));
+    assertThat(result.reference(276, 65)).isSameAs(result.symbol("bar", 305));
+
+    assertThat(result.reference(277, 60)).isSameAs(result.symbol("foo", 297));
+    assertThat(result.reference(277, 73)).isSameAs(result.symbol("bar", 305));
+
+    assertThat(result.reference(279, 36)).isSameAs(result.symbol("foo", 290));
+    assertThat(result.reference(279, 42)).isSameAs(result.symbol("bar", 305));
+
+    assertThat(result.reference(280, 44)).isSameAs(result.symbol("foo", 290));
+    assertThat(result.reference(280, 50)).isSameAs(result.symbol("bar", 305));
   }
 
   @Test

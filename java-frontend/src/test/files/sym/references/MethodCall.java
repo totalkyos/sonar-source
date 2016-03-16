@@ -269,3 +269,40 @@ class HidingOfStaticMethod {
     B.of(new C(), new C()); // call to inherited method A.of() through B
   }
 }
+
+class NonStaticInnerClassOfParametrizedClass {
+
+  void tst() {
+    new Foo<Bar>().parametrizedNonStaticInnerClass.foo("hello").bar();
+    getParametrizedClass().parametrizedNonStaticInnerClass.foo("hello").bar();
+
+    new Foo<Bar>().innerClassField.foo().bar();
+    getParametrizedClass().innerClassField.foo().bar();
+  }
+
+  Foo<Bar> getParametrizedClass() {
+    return null;
+  }
+
+  static class Foo<T> {
+    NonStaticInnerClass innerClassField;
+    class NonStaticInnerClass {
+      T foo() {
+        return null;
+      }
+    }
+
+    ParametrizedNonStaticInnerClass<String> parametrizedNonStaticInnerClass;
+    class ParametrizedNonStaticInnerClass<X> {
+      T foo(X x) {
+        return null;
+      }
+    }
+  }
+
+
+  static class Bar {
+    void bar() {
+    }
+  }
+}
