@@ -17,31 +17,26 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.se;
+package org.sonar.java.se.checks;
 
-import org.sonar.java.se.checks.SECheck;
-import org.sonar.java.se.constraint.ConstraintManager;
-import org.sonar.java.se.symbolicvalues.SymbolicValue;
-import org.sonar.plugins.java.api.JavaFileScannerContext;
-import org.sonar.plugins.java.api.tree.MemberSelectExpressionTree;
-import org.sonar.plugins.java.api.tree.Tree;
+import org.junit.Test;
+import org.sonar.java.se.JavaCheckVerifier;
 
-import java.util.List;
+public class CrossProceduralTest {
 
-public interface CheckerContext {
+  @Test
+  public void test() {
+    JavaCheckVerifier.verify("src/test/files/se/CrossProcedural.java", new NullDereferenceCheck(), new ConditionAlwaysTrueOrFalseCheck());
+  }
 
-  Object createSink();
+  @Test
+  public void noYield() {
+    JavaCheckVerifier.verify("src/test/files/se/CrossProceduralNoYield.java", new NullDereferenceCheck(), new ConditionAlwaysTrueOrFalseCheck());
+  }
 
-  void reportIssue(Tree tree, SECheck check, String message);
-
-  void reportIssue(Tree tree, SECheck check, String message, List<JavaFileScannerContext.Location> locations);
-
-  void addTransition(ProgramState state);
-
-  ProgramState getState();
-
-  ConstraintManager getConstraintManager();
-
-  void notifyPotentialNullPointer(SymbolicValue value, MemberSelectExpressionTree syntaxNode);
+  @Test
+  public void resources() {
+    JavaCheckVerifier.verify("src/test/files/se/CrossProceduralResources.java", new NullDereferenceCheck(), new ConditionAlwaysTrueOrFalseCheck(), new UnclosedResourcesCheck());
+  }
 
 }

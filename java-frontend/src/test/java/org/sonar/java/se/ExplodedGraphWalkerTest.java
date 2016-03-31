@@ -27,8 +27,11 @@ import org.sonar.java.se.checks.NonNullSetToNullCheck;
 import org.sonar.java.se.checks.NullDereferenceCheck;
 import org.sonar.java.se.checks.SECheck;
 import org.sonar.java.se.checks.UnclosedResourcesCheck;
+import org.sonar.java.se.crossprocedure.MethodBehavior;
+import org.sonar.java.se.crossprocedure.MethodBehaviorRoster;
 import org.sonar.plugins.java.api.JavaFileScanner;
 import org.sonar.plugins.java.api.tree.MethodInvocationTree;
+import org.sonar.plugins.java.api.semantic.Symbol;
 import org.sonar.plugins.java.api.tree.Tree;
 
 import java.util.Collections;
@@ -37,6 +40,16 @@ import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
 
 public class ExplodedGraphWalkerTest {
+
+  private static class TestRoster implements MethodBehaviorRoster {
+
+    @Override
+    public MethodBehavior getReference(Symbol symbol) {
+      // No stored behavior in test
+      return null;
+    }
+
+  }
 
   @Test
   public void test() {
@@ -49,7 +62,7 @@ public class ExplodedGraphWalkerTest {
     JavaCheckVerifier.verifyNoIssue("src/test/files/se/SeEngineTestCleanupState.java", new SymbolicExecutionVisitor(Collections.<JavaFileScanner>emptyList()) {
       @Override
       public void visitNode(Tree tree) {
-        ExplodedGraphWalker explodedGraphWalker = new ExplodedGraphWalker(false);
+        ExplodedGraphWalker explodedGraphWalker = new ExplodedGraphWalker(new MethodBehavior(), new TestRoster(), false);
         tree.accept(explodedGraphWalker);
         steps[0] += explodedGraphWalker.steps;
       }
@@ -57,7 +70,7 @@ public class ExplodedGraphWalkerTest {
     JavaCheckVerifier.verifyNoIssue("src/test/files/se/SeEngineTestCleanupState.java", new SymbolicExecutionVisitor(Collections.<JavaFileScanner>emptyList()) {
       @Override
       public void visitNode(Tree tree) {
-        ExplodedGraphWalker explodedGraphWalker = new ExplodedGraphWalker();
+        ExplodedGraphWalker explodedGraphWalker = new ExplodedGraphWalker(new MethodBehavior(), new TestRoster());
         tree.accept(explodedGraphWalker);
         steps[1] += explodedGraphWalker.steps;
       }
@@ -77,7 +90,7 @@ public class ExplodedGraphWalkerTest {
       @Override
       public void visitNode(Tree tree) {
         try {
-          tree.accept(new ExplodedGraphWalker());
+          tree.accept(new ExplodedGraphWalker(new MethodBehavior(), new TestRoster()));
         } catch (ExplodedGraphWalker.MaximumStepsReachedException exception) {
           fail("loop execution should be limited");
         }
@@ -91,7 +104,7 @@ public class ExplodedGraphWalkerTest {
       @Override
       public void visitNode(Tree tree) {
         try {
-          tree.accept(new ExplodedGraphWalker());
+          tree.accept(new ExplodedGraphWalker(new MethodBehavior(), new TestRoster()));
           fail("Too many states were processed !");
         } catch (ExplodedGraphWalker.MaximumStepsReachedException exception) {
           assertThat(exception.getMessage()).startsWith("reached limit of 10000 steps for method");
@@ -106,7 +119,7 @@ public class ExplodedGraphWalkerTest {
       @Override
       public void visitNode(Tree tree) {
         try {
-          tree.accept(new ExplodedGraphWalker());
+          tree.accept(new ExplodedGraphWalker(new MethodBehavior(), new TestRoster()));
           fail("Too many states were processed !");
         } catch (ExplodedGraphWalker.MaximumStepsReachedException exception) {
           assertThat(exception.getMessage()).startsWith("reached maximum number of 10000 branched states");

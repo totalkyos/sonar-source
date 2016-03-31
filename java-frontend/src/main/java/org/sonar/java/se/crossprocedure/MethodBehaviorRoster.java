@@ -17,31 +17,12 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.se;
+package org.sonar.java.se.crossprocedure;
 
-import org.sonar.java.se.checks.SECheck;
-import org.sonar.java.se.constraint.ConstraintManager;
-import org.sonar.java.se.symbolicvalues.SymbolicValue;
-import org.sonar.plugins.java.api.JavaFileScannerContext;
-import org.sonar.plugins.java.api.tree.MemberSelectExpressionTree;
-import org.sonar.plugins.java.api.tree.Tree;
+import org.sonar.plugins.java.api.semantic.Symbol;
 
-import java.util.List;
+public interface MethodBehaviorRoster {
 
-public interface CheckerContext {
-
-  Object createSink();
-
-  void reportIssue(Tree tree, SECheck check, String message);
-
-  void reportIssue(Tree tree, SECheck check, String message, List<JavaFileScannerContext.Location> locations);
-
-  void addTransition(ProgramState state);
-
-  ProgramState getState();
-
-  ConstraintManager getConstraintManager();
-
-  void notifyPotentialNullPointer(SymbolicValue value, MemberSelectExpressionTree syntaxNode);
+  MethodBehavior getReference(Symbol symbol);
 
 }

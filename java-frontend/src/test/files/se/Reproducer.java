@@ -102,7 +102,7 @@ class A {
     }
   }
 
-  void foo() {
+  boolean foo() {
     Object object2;
     try{
       object2 = potentiallyRaiseException();
@@ -110,6 +110,7 @@ class A {
       System.out.println("foo");
     }
     object2.toString(); // not accessible with null value
+    return wasChecked();
   }
 
   void assignUnknownSymbol() {

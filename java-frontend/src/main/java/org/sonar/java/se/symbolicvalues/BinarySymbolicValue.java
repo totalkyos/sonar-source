@@ -21,17 +21,17 @@ package org.sonar.java.se.symbolicvalues;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import org.sonar.java.se.ProgramState;
 import org.sonar.java.se.constraint.BooleanConstraint;
 import org.sonar.java.se.constraint.Constraint;
 import org.sonar.java.se.constraint.ObjectConstraint;
-import org.sonar.java.se.ProgramState;
 
 import java.util.List;
 
 public abstract class BinarySymbolicValue extends SymbolicValue {
 
-  SymbolicValue leftOp;
-  SymbolicValue rightOp;
+  protected SymbolicValue leftOp;
+  protected SymbolicValue rightOp;
 
   public BinarySymbolicValue(int id) {
     super(id);
@@ -47,6 +47,8 @@ public abstract class BinarySymbolicValue extends SymbolicValue {
   @Override
   public void computedFrom(List<SymbolicValue> symbolicValues) {
     Preconditions.checkArgument(symbolicValues.size() == 2);
+    Preconditions.checkNotNull(symbolicValues.get(0));
+    Preconditions.checkNotNull(symbolicValues.get(1));
     rightOp = symbolicValues.get(0);
     leftOp = symbolicValues.get(1);
   }

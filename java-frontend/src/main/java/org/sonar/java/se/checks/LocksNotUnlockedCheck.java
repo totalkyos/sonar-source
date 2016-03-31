@@ -28,6 +28,7 @@ import org.sonar.java.se.constraint.BooleanConstraint;
 import org.sonar.java.se.constraint.ConstraintManager;
 import org.sonar.java.se.constraint.ObjectConstraint;
 import org.sonar.java.se.symbolicvalues.SymbolicValue;
+import org.sonar.java.se.symbolicvalues.SymbolicValueAdapter;
 import org.sonar.plugins.java.api.semantic.Symbol;
 import org.sonar.plugins.java.api.tree.ExpressionTree;
 import org.sonar.plugins.java.api.tree.IdentifierTree;
@@ -53,6 +54,11 @@ public class LocksNotUnlockedCheck extends SECheck {
       super(id);
       this.operand = operand;
       this.syntaxNode = syntaxNode;
+    }
+
+    @Override
+    public TryLockSymbolicValue converted(int id, SymbolicValueAdapter adapter) {
+      return new TryLockSymbolicValue(id, adapter.convert(operand), syntaxNode);
     }
 
     @Override

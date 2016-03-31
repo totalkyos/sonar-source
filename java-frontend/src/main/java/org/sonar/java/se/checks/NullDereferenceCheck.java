@@ -85,6 +85,7 @@ public class NullDereferenceCheck extends SECheck {
     constraint = programState.getConstraint(targetValue);
     if (constraint == null) {
       // We dereferenced the target value for the member select, so we can assume it is not null when not already known
+      context.notifyPotentialNullPointer(targetValue, syntaxNode);
       return programState.addConstraint(targetValue, ObjectConstraint.NOT_NULL);
     }
     return programState;

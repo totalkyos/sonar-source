@@ -1,7 +1,9 @@
 class A0 {
+  
+  private Object x;
 
   boolean boolMethod() {
-    return true;
+    return x == null;
   }
 
   void test_reduced_steps(Object c) {

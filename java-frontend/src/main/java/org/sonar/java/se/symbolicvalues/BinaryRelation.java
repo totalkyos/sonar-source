@@ -19,8 +19,8 @@
  */
 package org.sonar.java.se.symbolicvalues;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import org.sonar.java.se.symbolicvalues.RelationalSymbolicValue.Kind;
 
 import javax.annotation.CheckForNull;
@@ -92,10 +92,26 @@ public abstract class BinaryRelation {
   private final int hashcode;
 
   protected BinaryRelation(Kind kind, SymbolicValue v1, SymbolicValue v2) {
+    Preconditions.checkNotNull(v1);
+    Preconditions.checkNotNull(v2);
     this.kind = kind;
     leftOp = v1;
     rightOp = v2;
     hashcode = Objects.hash(kind, leftOp, rightOp);
+  }
+
+  public SymbolicValue asValue() {
+    RelationalSymbolicValue value = new RelationalSymbolicValue(-1, kind);
+    value.computedFrom(Lists.newArrayList(rightOp, leftOp));
+    return value;
+  }
+
+  public SymbolicValue leftOp() {
+    return leftOp;
+  }
+
+  public SymbolicValue rightOp() {
+    return rightOp;
   }
 
   @Override
@@ -220,9 +236,8 @@ public abstract class BinaryRelation {
    * @param relation another SymbolicValueRelation
    * @return a SymbolicValueRelation or null if the receiver and the supplied relation cannot be combined
    */
-  @VisibleForTesting
   @CheckForNull
-  BinaryRelation combineUnordered(BinaryRelation relation) {
+  public BinaryRelation combineUnordered(BinaryRelation relation) {
     BinaryRelation combined = null;
     if (rightOp.equals(relation.leftOp)) {
       combined = relation.combineOrdered(this);
@@ -277,7 +292,7 @@ public abstract class BinaryRelation {
   /**
    * @return a new relation, equivalent to the receiver with inverted parameters
    */
-  protected BinaryRelation symmetric() {
+  public BinaryRelation symmetric() {
     if (symmetric == null) {
       symmetric = binaryRelation(kind.symmetric(), rightOp, leftOp);
     }

@@ -24,9 +24,11 @@ import org.sonar.java.matcher.MethodMatcher;
 import org.sonar.java.se.CheckerContext;
 import org.sonar.java.se.ProgramState;
 import org.sonar.java.se.SymbolicValueFactory;
+import org.sonar.java.se.constraint.Constraint;
 import org.sonar.java.se.constraint.ConstraintManager;
 import org.sonar.java.se.constraint.ObjectConstraint;
 import org.sonar.java.se.symbolicvalues.SymbolicValue;
+import org.sonar.java.se.symbolicvalues.SymbolicValueAdapter;
 import org.sonar.plugins.java.api.semantic.Symbol;
 import org.sonar.plugins.java.api.semantic.Type;
 import org.sonar.plugins.java.api.tree.Arguments;
@@ -51,7 +53,7 @@ import java.util.Map;
 public class UnclosedResourcesCheck extends SECheck {
 
   private enum Status {
-    OPENED, CLOSED
+    OPENED, CLOSED, OPEN_USED
   }
 
   private static final String JAVA_IO_AUTO_CLOSEABLE = "java.lang.AutoCloseable";
@@ -160,6 +162,11 @@ public class UnclosedResourcesCheck extends SECheck {
     }
 
     @Override
+    public ResourceWrapperSymbolicValue converted(int id, SymbolicValueAdapter adapter) {
+      return new ResourceWrapperSymbolicValue(id, adapter.convert(dependent));
+    }
+
+    @Override
     public SymbolicValue wrappedValue() {
       return dependent.wrappedValue();
     }
@@ -212,7 +219,7 @@ public class UnclosedResourcesCheck extends SECheck {
           }
         }
       } else {
-        closeArguments(syntaxNode.arguments(), 0);
+        markParameterUsage(syntaxNode.arguments(), 0);
       }
     }
 
@@ -228,7 +235,7 @@ public class UnclosedResourcesCheck extends SECheck {
           } else {
             currentVal = programState.peekValue();
           }
-          closeResource(currentVal);
+          markExternalUsage(currentVal);
         }
       }
     }
@@ -265,8 +272,7 @@ public class UnclosedResourcesCheck extends SECheck {
           constraintManager.setValueFactory(new WrappedValueFactory(value));
         }
       }
-      // close any resource used as argument, even for unknown methods
-      closeArguments(syntaxNode.arguments(), 1);
+      markParameterUsage(syntaxNode.arguments(), 1);
     }
 
     private SymbolicValue getTargetValue(MethodInvocationTree syntaxNode) {
@@ -292,11 +298,20 @@ public class UnclosedResourcesCheck extends SECheck {
       }
     }
 
-    private void closeArguments(final Arguments arguments, int stackOffset) {
+    private void markParameterUsage(final Arguments arguments, int stackOffset) {
       final List<SymbolicValue> values = programState.peekValues(arguments.size() + stackOffset);
       final List<SymbolicValue> argumentValues = values.subList(stackOffset, values.size());
       for (SymbolicValue target : argumentValues) {
         closeResource(target);
+      }
+    }
+
+    private void markExternalUsage(@Nullable final SymbolicValue target) {
+      if (target != null) {
+        ObjectConstraint oConstraint = programState.getConstraintWithStatus(target, Status.OPENED);
+        if (oConstraint != null) {
+          programState = programState.addConstraint(target.wrappedValue(), oConstraint.withStatus(Status.OPEN_USED));
+        }
       }
     }
 
@@ -352,4 +367,10 @@ public class UnclosedResourcesCheck extends SECheck {
     }
   }
 
+  public static Constraint atMethodExit(ObjectConstraint constraint, MethodInvocationTree mit) {
+    if (constraint.hasStatus(Status.OPEN_USED)) {
+      return constraint.withStatus(Status.OPENED).atSyntaxNode(mit);
+    }
+    return constraint;
+  }
 }

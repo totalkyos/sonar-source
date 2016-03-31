@@ -26,35 +26,50 @@ import org.sonar.java.se.CheckerContext;
 import org.sonar.plugins.java.api.tree.MethodTree;
 import org.sonar.plugins.java.api.tree.Tree;
 
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.Set;
 
 @Rule(key = "S2583")
 public class ConditionAlwaysTrueOrFalseCheck extends SECheck {
 
-  private final Set<Tree> evaluatedToFalse = Sets.newHashSet();
-  private final Set<Tree> evaluatedToTrue = Sets.newHashSet();
+  private Deque<DualSet> activeSets = new LinkedList<>();
 
   @Override
   public void init(MethodTree methodTree, CFG cfg) {
-    evaluatedToFalse.clear();
-    evaluatedToTrue.clear();
+    activeSets.push(new DualSet());
   }
 
   @Override
   public void checkEndOfExecution(CheckerContext context) {
-    for (Tree condition : Sets.difference(evaluatedToFalse, evaluatedToTrue)) {
+    DualSet dualSet = activeSets.pop();
+    for (Tree condition : Sets.difference(dualSet.evaluatedToFalse, dualSet.evaluatedToTrue)) {
       context.reportIssue(condition, this, "Change this condition so that it does not always evaluate to \"false\"");
     }
-    for (Tree condition : Sets.difference(evaluatedToTrue, evaluatedToFalse)) {
+    for (Tree condition : Sets.difference(dualSet.evaluatedToTrue, dualSet.evaluatedToFalse)) {
       context.reportIssue(condition, this, "Change this condition so that it does not always evaluate to \"true\"");
     }
   }
 
   public void evaluatedToFalse(Tree condition) {
-    evaluatedToFalse.add(condition);
+    activeSets.peek().evaluatedToFalse(condition);
   }
 
   public void evaluatedToTrue(Tree condition) {
-    evaluatedToTrue.add(condition);
+    activeSets.peek().evaluatedToTrue(condition);
+  }
+
+  private static class DualSet {
+
+    final Set<Tree> evaluatedToFalse = Sets.newHashSet();
+    final Set<Tree> evaluatedToTrue = Sets.newHashSet();
+
+    void evaluatedToFalse(Tree condition) {
+      evaluatedToFalse.add(condition);
+    }
+
+    void evaluatedToTrue(Tree condition) {
+      evaluatedToTrue.add(condition);
+    }
   }
 }

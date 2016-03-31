@@ -27,6 +27,7 @@ import org.sonar.java.se.SymbolicValueFactory;
 import org.sonar.java.se.symbolicvalues.NullCheckSymbolicValue;
 import org.sonar.java.se.symbolicvalues.RelationalSymbolicValue;
 import org.sonar.java.se.symbolicvalues.SymbolicValue;
+import org.sonar.java.se.symbolicvalues.SymbolicValueAdapter;
 import org.sonar.plugins.java.api.semantic.Symbol;
 import org.sonar.plugins.java.api.semantic.Type;
 import org.sonar.plugins.java.api.tree.ExpressionTree;
@@ -170,6 +171,12 @@ public class ConstraintManager {
     List<ProgramState> falseConstraint = sv.setConstraint(unstack.state, BooleanConstraint.FALSE);
     List<ProgramState> trueConstraint = sv.setConstraint(unstack.state, BooleanConstraint.TRUE);
     return new Pair<>(falseConstraint, trueConstraint);
+  }
+
+  public SymbolicValue convert(SymbolicValue value, SymbolicValueAdapter adapter) {
+    SymbolicValue converted = value.converted(counter, adapter);
+    counter++;
+    return converted;
   }
 
 }

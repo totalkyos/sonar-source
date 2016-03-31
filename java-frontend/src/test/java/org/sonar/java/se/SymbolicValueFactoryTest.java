@@ -24,6 +24,7 @@ import org.sonar.java.model.InternalSyntaxToken;
 import org.sonar.java.model.expression.IdentifierTreeImpl;
 import org.sonar.java.se.constraint.ConstraintManager;
 import org.sonar.java.se.symbolicvalues.SymbolicValue;
+import org.sonar.java.se.symbolicvalues.SymbolicValueAdapter;
 import org.sonar.plugins.java.api.tree.IdentifierTree;
 import org.sonar.plugins.java.api.tree.SyntaxTrivia;
 import org.sonar.plugins.java.api.tree.Tree;
@@ -39,6 +40,11 @@ public class SymbolicValueFactoryTest {
 
     public TestSymbolicValue(int id) {
       super(id);
+    }
+
+    @Override
+    public TestSymbolicValue converted(int id, SymbolicValueAdapter adapter) {
+      return new TestSymbolicValue(id);
     }
   }
 

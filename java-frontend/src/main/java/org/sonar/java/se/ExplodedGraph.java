@@ -73,6 +73,10 @@ public class ExplodedGraph {
       }
       return false;
     }
+
+    public ProgramPoint next() {
+      return new ProgramPoint(block, i + 1);
+    }
   }
 
   public static class Node {

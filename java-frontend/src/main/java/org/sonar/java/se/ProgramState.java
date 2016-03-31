@@ -37,6 +37,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -111,7 +112,7 @@ public class ProgramState {
     this.stack = ps.stack;
   }
 
-  ProgramState stackValue(SymbolicValue sv) {
+  public ProgramState stackValue(SymbolicValue sv) {
     Deque<SymbolicValue> newStack = new LinkedList<>(stack);
     newStack.push(sv);
     return new ProgramState(this, newStack);
@@ -349,6 +350,17 @@ public class ProgramState {
             result.put(value, constraint);
           }
         }
+      }
+    });
+    return result;
+  }
+
+  public Collection<SymbolicValue> getConstrainedValues() {
+    final List<SymbolicValue> result = new ArrayList<>();
+    constraints.forEach(new PMap.Consumer<SymbolicValue, Constraint>() {
+      @Override
+      public void accept(SymbolicValue value, Constraint valueConstraint) {
+        result.add(value);
       }
     });
     return result;

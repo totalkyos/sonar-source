@@ -23,16 +23,26 @@ import com.google.common.collect.Lists;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.java.ast.visitors.SubscriptionVisitor;
+import org.sonar.java.se.crossprocedure.MethodBehavior;
+import org.sonar.java.se.crossprocedure.MethodBehaviorRoster;
 import org.sonar.java.se.symbolicvalues.BinaryRelation;
 import org.sonar.plugins.java.api.JavaFileScanner;
+import org.sonar.plugins.java.api.JavaFileScannerContext;
+import org.sonar.plugins.java.api.semantic.Symbol;
+import org.sonar.plugins.java.api.tree.MethodTree;
 import org.sonar.plugins.java.api.tree.Tree;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class SymbolicExecutionVisitor extends SubscriptionVisitor {
-  private static final Logger LOG = Loggers.get(SymbolicExecutionVisitor.class);
+public class SymbolicExecutionVisitor extends SubscriptionVisitor implements MethodBehaviorRoster {
+  static final Logger LOG = Loggers.get(SymbolicExecutionVisitor.class);
 
   private final ExplodedGraphWalker.ExplodedGraphWalkerFactory egwFactory;
+  private final List<Symbol> itemsToProcess = new ArrayList<>();
+  private static final Map<Symbol, MethodBehavior> behaviors = new HashMap<>();
 
   public SymbolicExecutionVisitor(List<JavaFileScanner> executableScanners) {
     egwFactory = new ExplodedGraphWalker.ExplodedGraphWalkerFactory(executableScanners);
@@ -45,11 +55,39 @@ public class SymbolicExecutionVisitor extends SubscriptionVisitor {
 
   @Override
   public void visitNode(Tree tree) {
+    Symbol symbol = ((MethodTree) tree).symbol();
+    itemsToProcess.add(symbol);
+  }
+
+  @Override
+  public void scanFile(JavaFileScannerContext context) {
+    super.scanFile(context);
+    while (!itemsToProcess.isEmpty()) {
+      Symbol symbol = itemsToProcess.remove(0);
+      process(symbol);
+    }
+  }
+
+  private void process(Symbol symbol) {
+    Tree tree = symbol.declaration();
     try {
-      tree.accept(egwFactory.createWalker());
-    } catch (ExplodedGraphWalker.MaximumStepsReachedException | ExplodedGraphWalker.ExplodedGraphTooBigException | BinaryRelation.TransitiveRelationExceededException exception) {
+      MethodBehavior behavior = new MethodBehavior();
+      ExplodedGraphWalker walker = egwFactory.createWalker(behavior, this);
+      tree.accept(walker);
+      if (!symbol.isAbstract()) {
+        behaviors.put(symbol, behavior);
+      }
+    } catch (ExplodedGraphWalker.MaximumStepsReachedException | ExplodedGraphWalker.ExplodedGraphTooBigException
+      | BinaryRelation.TransitiveRelationExceededException exception) {
       LOG.debug("Could not complete symbolic execution: ", exception);
     }
+  }
 
+  @Override
+  public MethodBehavior getReference(Symbol symbol) {
+    if (itemsToProcess.remove(symbol) && !symbol.isAbstract()) {
+      process(symbol);
+    }
+    return behaviors.get(symbol);
   }
 }
