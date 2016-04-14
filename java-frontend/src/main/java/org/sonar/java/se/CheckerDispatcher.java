@@ -124,6 +124,12 @@ public class CheckerDispatcher implements CheckerContext {
     }
   }
 
+  public void executeExceptionEndOfExecution() {
+    for (SECheck checker : checks) {
+      checker.executeExceptionEndOfExecution(this);
+    }
+  }
+
   public void init(MethodTree methodTree, CFG cfg) {
     for (SECheck checker : checks) {
       checker.init(methodTree, cfg);

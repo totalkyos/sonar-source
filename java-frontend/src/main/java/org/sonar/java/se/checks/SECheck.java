@@ -57,6 +57,10 @@ public abstract class SECheck implements JavaFileScanner {
     // By default do nothing
   }
 
+  public void executeExceptionEndOfExecution(CheckerContext context) {
+    // By default do nothing
+  }
+
   @Override
   public void scanFile(JavaFileScannerContext context) {
     for (SEIssue seIssue : issues) {

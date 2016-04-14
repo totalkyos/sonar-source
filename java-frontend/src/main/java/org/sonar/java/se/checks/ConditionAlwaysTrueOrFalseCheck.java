@@ -51,6 +51,11 @@ public class ConditionAlwaysTrueOrFalseCheck extends SECheck {
     }
   }
 
+  @Override
+  public void executeExceptionEndOfExecution(CheckerContext context) {
+    activeSets.pop();
+  }
+
   public void evaluatedToFalse(Tree condition) {
     activeSets.peek().evaluatedToFalse(condition);
   }
