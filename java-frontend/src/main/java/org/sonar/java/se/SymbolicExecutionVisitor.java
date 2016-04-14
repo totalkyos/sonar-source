@@ -74,7 +74,7 @@ public class SymbolicExecutionVisitor extends SubscriptionVisitor implements Met
       MethodBehavior behavior = new MethodBehavior();
       ExplodedGraphWalker walker = egwFactory.createWalker(behavior, this);
       tree.accept(walker);
-      if (!symbol.isAbstract()) {
+      if (!symbol.isAbstract() && !behavior.isExecutionSink()) {
         behaviors.put(symbol, behavior);
       }
     } catch (ExplodedGraphWalker.MaximumStepsReachedException | ExplodedGraphWalker.ExplodedGraphTooBigException

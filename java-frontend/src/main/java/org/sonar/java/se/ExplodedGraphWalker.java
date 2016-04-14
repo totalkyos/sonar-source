@@ -389,6 +389,7 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
   private void visit(Tree tree, @Nullable Tree terminator) {
     if (!checkerDispatcher.executeCheckPreStatement(tree)) {
       // Some of the check pre statement sink the execution on this node.
+      methodBehavior.notifyExecutionSink();
       return;
     }
     switch (tree.kind()) {

@@ -38,6 +38,7 @@ public class MethodBehavior {
   private final List<SymbolicValue> parameterValues = new ArrayList<>();
   private final List<MethodYield> yields = new ArrayList<>();
   private final List<PotentialNullPointer> potentialNullPointers = new ArrayList<>();
+  private boolean executionSink;
 
   public void setMethodSymbol(Symbol symbol) {
     methodSymbol = symbol;
@@ -129,5 +130,13 @@ public class MethodBehavior {
     if (index >= 0) {
       potentialNullPointers.add(new PotentialNullPointer(methodSymbol, value, syntaxNode, index + 1));
     }
+  }
+
+  public void notifyExecutionSink() {
+    executionSink = true;
+  }
+
+  public boolean isExecutionSink() {
+    return executionSink;
   }
 }
