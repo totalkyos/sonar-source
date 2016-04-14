@@ -177,6 +177,7 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
     }
     programState = ProgramState.EMPTY_STATE;
     steps = 0;
+    methodBehavior.setMethodSymbol(tree.symbol());
     for (ProgramState startingState : startingStates(tree, programState)) {
       enqueue(new ExplodedGraph.ProgramPoint(cfg.entry(), 0), startingState);
     }
@@ -517,7 +518,9 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
       Type returnType = mit.symbolType();
       if (!returnType.isVoid() && !returnType.isUnknown()) {
         if (resultingStates.isEmpty()) {
-          reportImpossibleInvocation(mit, invocationYields);
+          for (String message : noYieldIssues(mit, invocationYields)) {
+            checkerDispatcher.reportIssue(mit, alwaysTrueOrFalseChecker, message);
+          }
         }
         return resultingStates;
       }
@@ -526,16 +529,15 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
     return resultingStates;
   }
 
-  private void reportImpossibleInvocation(MethodInvocationTree mit, List<MethodInvocationYield> invocationYields) {
-    boolean issueReported = false;
+  private List<String> noYieldIssues(MethodInvocationTree mit, List<MethodInvocationYield> invocationYields) {
+    List<String> messages = new ArrayList<>();
     for (MethodInvocationYield yield : invocationYields) {
-      if (yield.reportIssue(checkerDispatcher, alwaysTrueOrFalseChecker, mit)) {
-        issueReported = true;
-      }
+      messages.addAll(yield.noYieldIssues(checkerDispatcher, mit));
     }
-    if (!issueReported) {
-      checkerDispatcher.reportIssue(mit, alwaysTrueOrFalseChecker, "Incompatible arguments in method call");
+    if (messages.isEmpty()) {
+      messages.add("Incompatible arguments in method call");
     }
+    return messages;
   }
 
   private List<ProgramState> resultStates(List<MethodInvocationYield> invocationYields, MethodInvocationTree mit, ProgramState state) {

@@ -33,10 +33,19 @@ import java.util.Set;
 
 public class MethodBehavior {
 
+  private Symbol methodSymbol = null;
   private final List<Symbol> parameters = new ArrayList<>();
   private final List<SymbolicValue> parameterValues = new ArrayList<>();
   private final List<MethodYield> yields = new ArrayList<>();
   private final List<PotentialNullPointer> potentialNullPointers = new ArrayList<>();
+
+  public void setMethodSymbol(Symbol symbol) {
+    methodSymbol = symbol;
+  }
+
+  public Symbol getMethodSymbol() {
+    return methodSymbol;
+  }
 
   public void addYield(ProgramState state) {
     yields.add(new MethodYield(this, state));
@@ -112,7 +121,7 @@ public class MethodBehavior {
   public void notifyPotentialNullPointer(SymbolicValue value, MemberSelectExpressionTree syntaxNode) {
     int index = parameterValues.indexOf(value);
     if (index >= 0) {
-      potentialNullPointers.add(new PotentialNullPointer(value, syntaxNode, index + 1));
+      potentialNullPointers.add(new PotentialNullPointer(methodSymbol, value, syntaxNode, index + 1));
     }
   }
 }

@@ -21,7 +21,6 @@ package org.sonar.java.se.crossprocedure;
 
 import org.sonar.java.se.CheckerContext;
 import org.sonar.java.se.ProgramState;
-import org.sonar.java.se.checks.SECheck;
 import org.sonar.java.se.constraint.ObjectConstraint;
 import org.sonar.java.se.symbolicvalues.SymbolicValue;
 import org.sonar.plugins.java.api.semantic.Symbol;
@@ -29,8 +28,8 @@ import org.sonar.plugins.java.api.tree.MethodInvocationTree;
 
 import javax.annotation.CheckForNull;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +82,7 @@ public class MethodInvocationYield {
     }
   }
 
-  public boolean reportIssue(CheckerContext context, SECheck check, MethodInvocationTree mit) {
+  public List<String> noYieldIssues(CheckerContext context, MethodInvocationTree mit) {
     ProgramState state = context.getState();
     List<PotentialNullPointer> localNullPointers = new ArrayList<>();
     for (MethodInvocationConstraint constraint : constraints) {
@@ -91,17 +90,17 @@ public class MethodInvocationYield {
       if (potentialNullPointer == null) {
         state = constraint.getState(state, mit);
         if (state == null) {
-          return false;
+          return Collections.emptyList();
         }
       } else {
         localNullPointers.add(potentialNullPointer);
       }
     }
+    List<String> messages = new ArrayList<>();
     for (PotentialNullPointer potentialNullPointer : localNullPointers) {
-      context.reportIssue(mit, check, MessageFormat.format("Parameter {0} of method ''{1}'' is null and shall cause a NullPointerException at line {2} of that method",
-        potentialNullPointer.getIndex(), mit.symbol().name(), potentialNullPointer.getErrorLine()));
+      messages.add(potentialNullPointer.issueMessage(mit));
     }
-    return !localNullPointers.isEmpty();
+    return messages;
   }
 
   @Override
