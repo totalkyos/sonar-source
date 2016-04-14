@@ -39,11 +39,11 @@ public class CrossProcedural {
   }
   
   public void callerNullDelegate() {
-    int i = delegate(null, null, null);  // Noncompliant {{Incompatible arguments in method call}}
+    int i = delegate(null, null, null);  // Noncompliant {{Parameter 1 of method 'delegate' is null and shall cause a NullPointerException at line 12 of method 'identifier'}}
   }
   
   public void callerNullDelegateCondition() {
     Object a = new String("a");
-    int i = delegate(a, a, null);  // Noncompliant {{Incompatible arguments in method call}}
+    int i = delegate(a, a, null);  // Noncompliant {{Parameter 1 of method 'delegate' is null and shall cause a NullPointerException at line 12 of method 'identifier'}}
   }
 }

@@ -82,11 +82,15 @@ public class MethodBehavior {
     return new HashSet<>(parameterValues);
   }
 
-  public List<MethodInvocationYield> invocationYields(List<SymbolicValue> values, SymbolicValue resultValue, ConstraintManager constraintManager) {
+  public List<MethodInvocationYield> invocationYields(List<SymbolicValue> values, SymbolicValue resultValue, ConstraintManager constraintManager, MethodBehavior callingMethod) {
     ParameterValueAdapter adapter = new ParameterValueAdapter(parameterValues, values, constraintManager);
     List<PotentialNullPointer> convertedNPEs = new ArrayList<>(potentialNullPointers.size());
     for (PotentialNullPointer potentialNullPointer : potentialNullPointers) {
-      convertedNPEs.add(potentialNullPointer.converted(adapter));
+      PotentialNullPointer convertedPointer = potentialNullPointer.converted(adapter);
+      convertedNPEs.add(convertedPointer);
+      if (callingMethod.parameterValues.contains(convertedPointer.getValue())) {
+        callingMethod.potentialNullPointers.add(convertedPointer);
+      }
     }
     ArrayList<MethodInvocationYield> allowedYields = new ArrayList<>();
     for (MethodYield yield : yields) {
@@ -100,7 +104,9 @@ public class MethodBehavior {
   @Override
   public String toString() {
     StringBuilder buffer = new StringBuilder();
-    buffer.append("Parameters");
+    buffer.append("Method ");
+    buffer.append(methodSymbol.name());
+    buffer.append("\nParameters");
     String delimiter = ": ";
     Iterator<SymbolicValue> iterator = parameterValues.iterator();
     for (Symbol parameter : parameters) {
