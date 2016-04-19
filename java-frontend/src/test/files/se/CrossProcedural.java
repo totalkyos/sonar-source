@@ -77,6 +77,19 @@ public abstract class CrossProcedural {
     int n = varArguments(a, b, c, d);
     log(Integer.toString(n));
   }
+  
+  public void callerGetObjectOrNull() {
+    Object clazz = ObjectFactory.getObject();
+    if (clazz == null) {
+      clazz = getObjectOrNull();
+      if (clazz != null) {
+        ObjectFactory.cache(clazz);
+      } 
+    }
+    if (clazz != null) {
+      throw new IllegalStateException();
+    }
+  }
 
   public boolean isNull(Object b){
     if( b == null ) {
@@ -96,6 +109,13 @@ public abstract class CrossProcedural {
     } else {
       return new Object();
     }
+  }
+  
+  private Object getObjectOrNull() {
+    if(ObjectFactory.connected()) {
+      return ObjectFactory.getObject();
+    }
+    return null;
   }
 
   private void log(String string) {

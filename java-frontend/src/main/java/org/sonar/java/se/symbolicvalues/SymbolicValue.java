@@ -263,8 +263,7 @@ public class SymbolicValue {
     @Override
     public AndSymbolicValue converted(int id, SymbolicValueAdapter adapter) {
       AndSymbolicValue converted = new AndSymbolicValue(id);
-      converted.leftOp = adapter.convert(leftOp);
-      converted.rightOp = adapter.convert(rightOp);
+      computedFrom(ImmutableList.of(adapter.convert(rightOp), adapter.convert(leftOp)));
       return converted;
     }
 
@@ -300,8 +299,7 @@ public class SymbolicValue {
     @Override
     public OrSymbolicValue converted(int id, SymbolicValueAdapter adapter) {
       OrSymbolicValue converted = new OrSymbolicValue(id);
-      converted.leftOp = adapter.convert(leftOp);
-      converted.rightOp = adapter.convert(rightOp);
+      computedFrom(ImmutableList.of(adapter.convert(rightOp), adapter.convert(leftOp)));
       return converted;
     }
 
@@ -337,8 +335,7 @@ public class SymbolicValue {
     @Override
     public XorSymbolicValue converted(int id, SymbolicValueAdapter adapter) {
       XorSymbolicValue converted = new XorSymbolicValue(id);
-      converted.leftOp = adapter.convert(leftOp);
-      converted.rightOp = adapter.convert(rightOp);
+      computedFrom(ImmutableList.of(adapter.convert(rightOp), adapter.convert(leftOp)));
       return converted;
     }
 

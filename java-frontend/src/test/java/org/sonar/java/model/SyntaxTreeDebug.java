@@ -96,6 +96,8 @@ public class SyntaxTreeDebug {
       case DIVIDE_ASSIGNMENT:
       case REMAINDER_ASSIGNMENT:
       case AND_ASSIGNMENT:
+      case OR_ASSIGNMENT:
+      case XOR_ASSIGNMENT:
       case LEFT_SHIFT_ASSIGNMENT:
       case RIGHT_SHIFT_ASSIGNMENT:
       case UNSIGNED_RIGHT_SHIFT_ASSIGNMENT:
