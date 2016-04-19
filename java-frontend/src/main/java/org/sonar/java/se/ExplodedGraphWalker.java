@@ -536,10 +536,12 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
       messages.addAll(yield.noYieldIssues(checkerDispatcher, mit));
     }
     if (messages.isEmpty()) {
-      messages.add("Incompatible arguments in method call");
-    }
-    for (String message : messages) {
-      checkerDispatcher.reportIssue(mit, alwaysTrueOrFalseChecker, message);
+      checkerDispatcher.reportIssue(mit, alwaysTrueOrFalseChecker, "Incompatible arguments in method call");
+    } else {
+      NullDereferenceCheck npeCheck = checkerDispatcher.getChecker(NullDereferenceCheck.class);
+      for (String message : messages) {
+        checkerDispatcher.reportIssue(mit, npeCheck, message);
+      }
     }
   }
 

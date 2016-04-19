@@ -43,7 +43,11 @@ public class MethodYield {
   public MethodYield(MethodBehavior crossProceduralReference, ProgramState state) {
     result = state.peekValue();
     Set<SymbolicValue> valueSet = crossProceduralReference.parameterSet();
-    unknownResult = valueSet.add(result);
+    if (SymbolicValue.PROTECTED_SYMBOLIC_VALUES.contains(result)) {
+      unknownResult = false;
+    } else {
+      unknownResult = valueSet.add(result);
+    }
     List<BinaryRelation> relations = new ArrayList<>();
     for (SymbolicValue value : state.getConstrainedValues()) {
       Constraint constraint = state.getConstraint(value);

@@ -120,6 +120,11 @@ public class RelationalSymbolicValue extends BinarySymbolicValue {
 
   @Override
   public List<ProgramState> setConstraint(ProgramState initialProgramState, BooleanConstraint booleanConstraint) {
+    AtomicConstraint atomic = convertToAtomic(booleanConstraint);
+    if (atomic != null) {
+      ProgramState state = atomic.storeInto(initialProgramState);
+      return state == null ? ImmutableList.<ProgramState>of() : ImmutableList.of(state);
+    }
     ProgramState programState = checkRelation(booleanConstraint, initialProgramState);
     if (programState == null) {
       return ImmutableList.of();

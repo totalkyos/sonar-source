@@ -28,6 +28,8 @@ import org.sonar.plugins.java.api.tree.MemberSelectExpressionTree;
 import org.sonar.plugins.java.api.tree.MethodTree;
 import org.sonar.plugins.java.api.tree.Tree;
 
+import javax.annotation.Nonnull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -144,5 +146,16 @@ public class CheckerDispatcher implements CheckerContext {
   @Override
   public void notifyPotentialNullPointer(SymbolicValue value, MemberSelectExpressionTree syntaxNode) {
     explodedGraphWalker.notifyPotentialNullPointer(value, syntaxNode);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Nonnull
+  public <T extends SECheck> T getChecker(@Nonnull Class<T> clazz) {
+    for (SECheck check : checks) {
+      if (clazz.equals(check.getClass())) {
+        return (T) check;
+      }
+    }
+    throw new IllegalStateException("Request for a checker of unknown class: " + clazz);
   }
 }
