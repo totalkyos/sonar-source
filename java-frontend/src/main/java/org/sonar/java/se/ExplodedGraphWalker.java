@@ -319,7 +319,6 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
           resetFieldValues();
           break;
         case RETURN_STATEMENT:
-        case THROW_STATEMENT:
           methodBehavior.addYield(programState);
           break;
         default:

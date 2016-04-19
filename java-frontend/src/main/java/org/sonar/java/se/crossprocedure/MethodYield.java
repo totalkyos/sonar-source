@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 public class MethodYield {
@@ -57,12 +56,7 @@ public class MethodYield {
         RelationalSymbolicValue relationalValue = (RelationalSymbolicValue) value;
         RelationalSymbolicValue.AtomicConstraint atomic = ((RelationalSymbolicValue) value).convertToAtomic(state.getConstraint(value));
         if (atomic == null) {
-          BinaryRelation relation = relationalValue.binaryRelation();
-          if (BooleanConstraint.TRUE.equals(constraint)) {
-            relations.add(relation);
-          } else {
-            relations.add(relation.inverse());
-          }
+          relations.add(createRelation(relationalValue, constraint));
         } else {
           atomic.storeInto(constraints);
         }
@@ -72,6 +66,14 @@ public class MethodYield {
     for (BinaryRelation relation : relations) {
       constraints.put(relation.asValue(), BooleanConstraint.TRUE);
     }
+  }
+
+  private BinaryRelation createRelation(RelationalSymbolicValue relationalValue, Constraint constraint) {
+    BinaryRelation relation = relationalValue.binaryRelation();
+    if (BooleanConstraint.TRUE.equals(constraint)) {
+      return relation;
+    }
+    return relation.inverse();
   }
 
   private void reduceRelations(List<BinaryRelation> relations, Set<SymbolicValue> valueSet) {
@@ -108,7 +110,7 @@ public class MethodYield {
       adapter.setResultValue(result, resultValue);
     }
     MethodInvocationYield invocationYield = new MethodInvocationYield(adapter.convertValue(result));
-    for (Entry<SymbolicValue, Constraint> entry : constraints.entrySet()) {
+    for (Map.Entry<SymbolicValue, Constraint> entry : constraints.entrySet()) {
       invocationYield.addConstraint(new MethodInvocationConstraint(adapter.convertValue(entry.getKey()), entry.getValue()));
     }
     if (unknownResult) {
@@ -122,7 +124,7 @@ public class MethodYield {
     StringBuilder buffer = new StringBuilder();
     buffer.append(result);
     String delimiter = "\twhen: ";
-    for (Entry<SymbolicValue, Constraint> entry : constraints.entrySet()) {
+    for (Map.Entry<SymbolicValue, Constraint> entry : constraints.entrySet()) {
       buffer.append(delimiter);
       buffer.append(entry.getKey());
       buffer.append("->");

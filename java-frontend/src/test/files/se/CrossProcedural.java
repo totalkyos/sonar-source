@@ -1,5 +1,7 @@
 package javax.annotation;
 
+import org.apache.commons.lang.NullArgumentException;
+
 @interface Nonnull {}
 @interface Nullable {}
 
@@ -90,6 +92,13 @@ public abstract class CrossProcedural {
       throw new IllegalStateException();
     }
   }
+  
+  public Object callerComputeObjectOrException() {
+    Object b = ObjectFactory.getObject();
+    Object a = computeObjectOrException(b);
+    return a.toString();
+  }
+  
 
   public boolean isNull(Object b){
     if( b == null ) {
@@ -116,6 +125,13 @@ public abstract class CrossProcedural {
       return ObjectFactory.getObject();
     }
     return null;
+  }
+  
+  private Object computeObjectOrException(Object b) {
+    if (b == null) {
+      throw new NullArgumentException();
+    }
+    return b.toString();
   }
 
   private void log(String string) {

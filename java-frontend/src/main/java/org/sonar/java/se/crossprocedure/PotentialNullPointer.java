@@ -63,10 +63,10 @@ public class PotentialNullPointer {
 
   public String issueMessage(MethodInvocationTree mit) {
     if (methodSymbol.equals(mit.symbol())) {
-      return MessageFormat.format("Parameter {0} of method ''{1}'' is null and shall cause a NullPointerException at line {2} of that method",
+      return MessageFormat.format("Parameter {0} of method ''{1}'' may be null and shall cause a NullPointerException at line {2} of that method",
         getIndex(), mit.symbol().name(), getErrorLine());
     }
-    return MessageFormat.format("Parameter {0} of method ''{1}'' is null and shall cause a NullPointerException at line {2} of method ''{3}''",
+    return MessageFormat.format("Parameter {0} of method ''{1}'' may be null and shall cause a NullPointerException at line {2} of method ''{3}''",
       getIndex(), mit.symbol().name(), getErrorLine(), methodSymbol.name());
   }
 
