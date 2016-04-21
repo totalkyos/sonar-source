@@ -19,7 +19,6 @@
  */
 package org.sonar.java.se.crossprocedure;
 
-import com.google.common.collect.ImmutableList;
 import org.sonar.java.se.ProgramState;
 import org.sonar.java.se.constraint.BooleanConstraint;
 import org.sonar.java.se.constraint.Constraint;
@@ -44,17 +43,10 @@ public class MethodYield {
   final SymbolicValue result;
   private final boolean unknownResult;
 
-  public MethodYield(MethodBehavior crossProceduralReference, ProgramState state, SymbolicValue methodResult) {
-    SymbolicValue actualResult = state.peekValue();
+  public MethodYield(MethodBehavior crossProceduralReference, ProgramState state) {
+    result = state.peekValue();
     Set<SymbolicValue> valueSet = crossProceduralReference.parameterSet();
-    boolean keepResult;
-    if (SymbolicValue.PROTECTED_SYMBOLIC_VALUES.contains(actualResult)) {
-      unknownResult = false;
-      keepResult = true;
-    } else {
-      unknownResult = valueSet.add(actualResult);
-      keepResult = !unknownResult || (methodResult == null) || (actualResult instanceof SymbolicExceptionValue);
-    }
+    unknownResult = valueSet.add(result);
     List<BinaryRelation> relations = new ArrayList<>();
     for (SymbolicValue value : state.getConstrainedValues()) {
       Constraint constraint = state.getConstraint(value);
@@ -73,24 +65,6 @@ public class MethodYield {
     reduceRelations(relations, valueSet);
     for (BinaryRelation relation : relations) {
       constraints.put(relation.asValue(), BooleanConstraint.TRUE);
-    }
-    if (keepResult) {
-      result = actualResult;
-    } else {
-      convertResultConstraints(methodResult, actualResult);
-      result = methodResult;
-    }
-  }
-
-  private void convertResultConstraints(SymbolicValue newValue, SymbolicValue oldValue) {
-    Constraint resultConstraint = constraints.remove(oldValue);
-    if (resultConstraint != null) {
-      constraints.put(newValue, resultConstraint);
-    }
-    for (SymbolicValue value : constraints.keySet()) {
-      if (value instanceof RelationalSymbolicValue) {
-        ((RelationalSymbolicValue) value).exchange(oldValue, newValue);
-      }
     }
   }
 
@@ -132,16 +106,19 @@ public class MethodYield {
   }
 
   public MethodInvocationYield asInvocationYield(ParameterValueAdapter adapter, SymbolicValue resultValue) {
+    boolean resultAdded = false;
     if (result instanceof SymbolicExceptionValue) {
       adapter.setResultValue(result, adapter.convertValue(result));
+      resultAdded = true;
     } else if (unknownResult) {
       adapter.setResultValue(result, resultValue);
+      resultAdded = true;
     }
     MethodInvocationYield invocationYield = new MethodInvocationYield(adapter.convertValue(result));
     for (Map.Entry<SymbolicValue, Constraint> entry : constraints.entrySet()) {
       invocationYield.addConstraint(new MethodInvocationConstraint(adapter.convertValue(entry.getKey()), entry.getValue()));
     }
-    if (unknownResult) {
+    if (resultAdded) {
       adapter.removeResultValue(result);
     }
     return invocationYield;
@@ -164,13 +141,6 @@ public class MethodYield {
     return itsConstraints.isEmpty();
   }
 
-  SymbolicValue genericResult() {
-    if (result instanceof SymbolicExceptionValue) {
-      return null;
-    }
-    return unknownResult ? result : null;
-  }
-
   @Override
   public String toString() {
     StringBuilder buffer = new StringBuilder();
@@ -187,9 +157,16 @@ public class MethodYield {
   }
 
   Object constraintsWithout(SymbolicValue value) {
-    Map<SymbolicValue, Constraint> map = new HashMap<>(constraints);
-    map.remove(value);
-    return result == null ? map : ImmutableList.<Object>of(result, map);
+    StringBuilder key = new StringBuilder();
+    if (result != null) {
+      key.append(result.toString());
+    }
+    for (Entry<SymbolicValue, Constraint> entry : constraints.entrySet()) {
+      if (!value.equals(entry.getKey())) {
+        key.append(entry);
+      }
+    }
+    return key.toString();
   }
 
   Constraint constraint(SymbolicValue value) {

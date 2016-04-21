@@ -201,7 +201,7 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
         if (methodBehavior.isConstructor()) {
           ProgramState state = programState.stackValue(constraintManager.createSymbolicValue(tree));
           state = state.addConstraint(state.peekValue(), ObjectConstraint.NOT_NULL);
-          methodBehavior.addYield(state);
+          methodBehavior.addYield(state, constraintManager);
         }
         LOG.debug("End of potential path reached!");
         continue;
@@ -330,12 +330,12 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
           resetFieldValues();
           break;
         case RETURN_STATEMENT:
-          methodBehavior.addYield(programState);
+          methodBehavior.addYield(programState, constraintManager);
           break;
         case THROW_STATEMENT:
           ProgramState.Pop pop = programState.unstackValue(1);
           ProgramState state = pop.state.stackValue(constraintManager.createSymbolicExceptionValue((ThrowStatementTree) terminator));
-          methodBehavior.addYield(state);
+          methodBehavior.addYield(state, constraintManager);
           break;
         default:
           // do nothing by default.

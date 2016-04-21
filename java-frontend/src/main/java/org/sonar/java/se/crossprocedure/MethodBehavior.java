@@ -22,12 +22,18 @@ package org.sonar.java.se.crossprocedure;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.ListMultimap;
 import org.sonar.java.se.ProgramState;
+import org.sonar.java.se.constraint.BooleanConstraint;
 import org.sonar.java.se.constraint.Constraint;
 import org.sonar.java.se.constraint.ConstraintManager;
 import org.sonar.java.se.constraint.ObjectConstraint;
+import org.sonar.java.se.symbolicvalues.RelationalSymbolicValue;
+import org.sonar.java.se.symbolicvalues.SymbolicExceptionValue;
 import org.sonar.java.se.symbolicvalues.SymbolicValue;
 import org.sonar.plugins.java.api.semantic.Symbol;
 import org.sonar.plugins.java.api.tree.MemberSelectExpressionTree;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,6 +50,7 @@ public class MethodBehavior {
   private final List<MethodYield> yields = new ArrayList<>();
   private final List<PotentialNullPointer> potentialNullPointers = new ArrayList<>();
   private boolean executionSink;
+  private SymbolicValue methodResult;
 
   public void setMethodSymbol(Symbol symbol) {
     methodSymbol = symbol;
@@ -53,21 +60,42 @@ public class MethodBehavior {
     return methodSymbol;
   }
 
-  public void addYield(ProgramState state) {
-    SymbolicValue result = null;
-    for (MethodYield yield : yields) {
-      result = yield.genericResult();
-      if (result != null) {
-        break;
-      }
+  public void addYield(ProgramState programState, ConstraintManager constraintManager) {
+    ProgramState.Pop pop = programState.unstackValue(1);
+    ProgramState state = pop.state;
+    SymbolicValue result = pop.values.get(0);
+    if (SymbolicValue.NULL_LITERAL.equals(result)) {
+      state = createResult(state, constraintManager, new ObjectConstraint(true, false, methodSymbol.declaration(), null));
+    } else if (SymbolicValue.TRUE_LITERAL.equals(result)) {
+      state = createResult(state, constraintManager, BooleanConstraint.TRUE);
+    } else if (SymbolicValue.FALSE_LITERAL.equals(result)) {
+      state = createResult(state, constraintManager, BooleanConstraint.FALSE);
+    } else if (result instanceof SymbolicExceptionValue || parameterValues.contains(result)) {
+      state = programState;
+    } else if (methodResult == null && !(result instanceof RelationalSymbolicValue)) {
+      methodResult = result;
+      state = programState;
+    } else {
+      Constraint constraint = state.getConstraint(result);
+      state = state.removeConstraint(result);
+      state = createResult(state, constraintManager, constraint);
     }
-    MethodYield newYield = new MethodYield(this, state, result);
+    MethodYield newYield = new MethodYield(this, state);
     for (MethodYield yield : yields) {
       if (yield.equivalentTo(newYield)) {
         return;
       }
     }
     yields.add(newYield);
+  }
+
+  @Nonnull
+  private ProgramState createResult(ProgramState programState, ConstraintManager constraintManager, @Nullable Constraint objectConstraint) {
+    if (methodResult == null) {
+      methodResult = constraintManager.createSymbolicValue(methodSymbol.declaration());
+    }
+    ProgramState state = programState.stackValue(methodResult);
+    return objectConstraint == null ? state : state.addConstraint(methodResult, objectConstraint);
   }
 
   public void addParameter(Symbol symbol, SymbolicValue sv) {
