@@ -198,6 +198,12 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
       programState = node.programState;
       if (programPosition.block.successors().isEmpty()) {
         checkerDispatcher.executeCheckEndOfExecutionPath(constraintManager);
+        if (methodBehavior.isConstructor()) {
+          ProgramState state = programState.stackValue(constraintManager.createSymbolicValue(tree));
+          state = state.addConstraint(state.peekValue(), ObjectConstraint.NOT_NULL);
+          methodBehavior.addYield(state);
+        }
+        LOG.debug("End of potential path reached!");
         continue;
       }
       try {
@@ -528,7 +534,7 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
       List<MethodInvocationYield> invocationYields = invocationYields(behavior, unstack, resultValue);
       resultingStates.addAll(resultStates(invocationYields, mit, unstack.state));
       Type returnType = mit.symbolType();
-      if (!returnType.isVoid() && !returnType.isUnknown()) {
+      if ((!returnType.isVoid() && !returnType.isUnknown()) || behavior.isConstructor()) {
         if (resultingStates.isEmpty()) {
           reportNoYieldIssues(mit, invocationYields);
         }
@@ -837,16 +843,16 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
   }
 
   public void processNextStep() {
+    if (programState.peekValue() instanceof SymbolicExceptionValue) {
+      processException((SymbolicExceptionValue) programState.peekValue());
+      return;
+    }
     if (programPosition.i < programPosition.block.elements().size()) {
       clearStack(programPosition.block.elements().get(programPosition.i));
     }
-    if (programState.peekValue() instanceof SymbolicExceptionValue) {
-      processException((SymbolicExceptionValue) programState.peekValue());
-    } else {
-      enqueue(
-        new ExplodedGraph.ProgramPoint(programPosition.block, programPosition.i + 1),
-        programState, node.exitPath);
-    }
+    enqueue(
+      new ExplodedGraph.ProgramPoint(programPosition.block, programPosition.i + 1),
+      programState, node.exitPath);
   }
 
   private void processException(SymbolicExceptionValue exceptionValue) {

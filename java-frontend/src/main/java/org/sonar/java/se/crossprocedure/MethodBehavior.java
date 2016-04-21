@@ -176,6 +176,10 @@ public class MethodBehavior {
     return executionSink;
   }
 
+  public boolean isConstructor() {
+    return methodSymbol != null && "<init>".equals(methodSymbol.name());
+  }
+
   @Override
   public String toString() {
     StringBuilder buffer = new StringBuilder();
