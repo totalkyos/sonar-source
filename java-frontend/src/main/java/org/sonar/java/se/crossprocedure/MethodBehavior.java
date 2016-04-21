@@ -19,13 +19,18 @@
  */
 package org.sonar.java.se.crossprocedure;
 
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.ListMultimap;
 import org.sonar.java.se.ProgramState;
+import org.sonar.java.se.constraint.Constraint;
 import org.sonar.java.se.constraint.ConstraintManager;
+import org.sonar.java.se.constraint.ObjectConstraint;
 import org.sonar.java.se.symbolicvalues.SymbolicValue;
 import org.sonar.plugins.java.api.semantic.Symbol;
 import org.sonar.plugins.java.api.tree.MemberSelectExpressionTree;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -49,7 +54,20 @@ public class MethodBehavior {
   }
 
   public void addYield(ProgramState state) {
-    yields.add(new MethodYield(this, state));
+    SymbolicValue result = null;
+    for (MethodYield yield : yields) {
+      result = yield.genericResult();
+      if (result != null) {
+        break;
+      }
+    }
+    MethodYield newYield = new MethodYield(this, state, result);
+    for (MethodYield yield : yields) {
+      if (yield.equivalentTo(newYield)) {
+        return;
+      }
+    }
+    yields.add(newYield);
   }
 
   public void addParameter(Symbol symbol, SymbolicValue sv) {
@@ -83,6 +101,47 @@ public class MethodBehavior {
     return new HashSet<>(parameterValues);
   }
 
+  public void pruneYields() {
+    Set<SymbolicValue> values = new HashSet<>();
+    for (MethodYield yield : yields) {
+      values.addAll(yield.constrainedValues());
+    }
+    for (SymbolicValue value : values) {
+      pruneYields(value);
+    }
+  }
+
+  private void pruneYields(SymbolicValue value) {
+    ListMultimap<Object, MethodYield> map = LinkedListMultimap.create();
+    for (MethodYield yield : yields) {
+      map.put(yield.constraintsWithout(value), yield);
+    }
+    yields.clear();
+    Set<Object> keys = new HashSet<>(map.keySet());
+    for (Object key : keys) {
+      yields.addAll(pruneYields(value, map.get(key)));
+    }
+  }
+
+  private Collection<MethodYield> pruneYields(SymbolicValue value, List<MethodYield> list) {
+    List<MethodYield> result = new ArrayList<>();
+    while (!list.isEmpty()) {
+      MethodYield yield = list.remove(0);
+      Constraint constraint = yield.constraint(value);
+      for (Iterator<MethodYield> iterator = list.iterator(); iterator.hasNext();) {
+        MethodYield methodYield = iterator.next();
+        Constraint oredConstraint = ObjectConstraint.or(constraint, methodYield.constraint(value));
+        if (!ObjectConstraint.CONFLICT.equals(oredConstraint)) {
+          constraint = oredConstraint;
+          iterator.remove();
+        }
+      }
+      yield.setConstraint(value, constraint);
+      result.add(yield);
+    }
+    return result;
+  }
+
   public List<MethodInvocationYield> invocationYields(List<SymbolicValue> values, SymbolicValue resultValue, ConstraintManager constraintManager, MethodBehavior callingMethod) {
     ParameterValueAdapter adapter = new ParameterValueAdapter(parameterValues, values, constraintManager);
     List<PotentialNullPointer> convertedNPEs = new ArrayList<>(potentialNullPointers.size());
@@ -100,6 +159,21 @@ public class MethodBehavior {
       allowedYields.add(invocationYield);
     }
     return allowedYields;
+  }
+
+  public void notifyPotentialNullPointer(SymbolicValue value, MemberSelectExpressionTree syntaxNode) {
+    int index = parameterValues.indexOf(value);
+    if (index >= 0) {
+      potentialNullPointers.add(new PotentialNullPointer(methodSymbol, value, syntaxNode, index + 1));
+    }
+  }
+
+  public void notifyExecutionSink() {
+    executionSink = true;
+  }
+
+  public boolean isExecutionSink() {
+    return executionSink;
   }
 
   @Override
@@ -123,20 +197,5 @@ public class MethodBehavior {
       buffer.append(programState);
     }
     return buffer.toString();
-  }
-
-  public void notifyPotentialNullPointer(SymbolicValue value, MemberSelectExpressionTree syntaxNode) {
-    int index = parameterValues.indexOf(value);
-    if (index >= 0) {
-      potentialNullPointers.add(new PotentialNullPointer(methodSymbol, value, syntaxNode, index + 1));
-    }
-  }
-
-  public void notifyExecutionSink() {
-    executionSink = true;
-  }
-
-  public boolean isExecutionSink() {
-    return executionSink;
   }
 }

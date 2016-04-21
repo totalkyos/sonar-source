@@ -17,10 +17,13 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.se.checks;
+package org.sonar.java.se.crossprocedure;
 
 import org.junit.Test;
 import org.sonar.java.se.JavaCheckVerifier;
+import org.sonar.java.se.checks.ConditionAlwaysTrueOrFalseCheck;
+import org.sonar.java.se.checks.NullDereferenceCheck;
+import org.sonar.java.se.checks.UnclosedResourcesCheck;
 
 public class CrossProceduralTest {
 
@@ -37,6 +40,12 @@ public class CrossProceduralTest {
   @Test
   public void resources() {
     JavaCheckVerifier.verify("src/test/files/se/CrossProceduralResources.java", new NullDereferenceCheck(), new ConditionAlwaysTrueOrFalseCheck(), new UnclosedResourcesCheck());
+  }
+
+  @Test
+  public void exception() {
+    JavaCheckVerifier.verifyNoIssue("src/test/files/se/CrossProceduralException.java", new NullDereferenceCheck(), new ConditionAlwaysTrueOrFalseCheck(),
+      new UnclosedResourcesCheck());
   }
 
 }

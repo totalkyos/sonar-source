@@ -7,6 +7,10 @@
 110,
 366,
 ],
+'commons-beanutils:commons-beanutils:src/main/java/org/apache/commons/beanutils/PropertyUtilsBean.java':[
+1378,
+1469,
+],
 'commons-beanutils:commons-beanutils:src/main/java/org/apache/commons/beanutils/expression/DefaultResolver.java':[
 264,
 ],

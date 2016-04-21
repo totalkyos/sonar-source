@@ -254,4 +254,17 @@ public class RelationalSymbolicValue extends BinarySymbolicValue {
       return buffer.toString();
     }
   }
+
+  public void exchange(SymbolicValue oldValue, SymbolicValue newValue) {
+    if (leftOp.equals(oldValue)) {
+      leftOp = newValue;
+    } else if (leftOp instanceof RelationalSymbolicValue) {
+      ((RelationalSymbolicValue) leftOp).exchange(oldValue, newValue);
+    }
+    if (rightOp.equals(oldValue)) {
+      rightOp = newValue;
+    } else if (rightOp instanceof RelationalSymbolicValue) {
+      ((RelationalSymbolicValue) rightOp).exchange(oldValue, newValue);
+    }
+  }
 }

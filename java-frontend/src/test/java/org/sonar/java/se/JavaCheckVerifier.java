@@ -138,8 +138,8 @@ public class JavaCheckVerifier extends SubscriptionVisitor {
    * @param check The check to be used for the analysis
    * @param classpath The files to be used as classpath
    */
-  public static void verify(String filename, JavaFileScanner check, Collection<File> classpath) {
-    scanFile(filename, new JavaFileScanner[] {check}, new JavaCheckVerifier(), classpath);
+  public static void verify(String filename, Collection<File> classpath, JavaFileScanner... checks) {
+    scanFile(filename, checks, new JavaCheckVerifier(), classpath);
   }
 
   /**
@@ -166,6 +166,18 @@ public class JavaCheckVerifier extends SubscriptionVisitor {
     JavaCheckVerifier javaCheckVerifier = new JavaCheckVerifier();
     javaCheckVerifier.expectNoIssues = true;
     scanFile(filename, new JavaFileScanner[] {check}, javaCheckVerifier);
+  }
+
+  /**
+   * Verifies that the provided file will not raise any issue when analyzed with the given check.
+   *
+   * @param filename The file to be analyzed
+   * @param check The check to be used for the analysis
+   */
+  public static void verifyNoIssue(String filename, JavaFileScanner... checks) {
+    JavaCheckVerifier javaCheckVerifier = new JavaCheckVerifier();
+    javaCheckVerifier.expectNoIssues = true;
+    scanFile(filename, checks, javaCheckVerifier);
   }
 
   /**

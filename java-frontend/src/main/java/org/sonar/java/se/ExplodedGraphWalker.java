@@ -44,6 +44,7 @@ import org.sonar.java.se.constraint.ObjectConstraint;
 import org.sonar.java.se.crossprocedure.MethodBehavior;
 import org.sonar.java.se.crossprocedure.MethodBehaviorRoster;
 import org.sonar.java.se.crossprocedure.MethodInvocationYield;
+import org.sonar.java.se.symbolicvalues.SymbolicExceptionValue;
 import org.sonar.java.se.symbolicvalues.SymbolicValue;
 import org.sonar.plugins.java.api.JavaFileScanner;
 import org.sonar.plugins.java.api.semantic.Symbol;
@@ -66,7 +67,9 @@ import org.sonar.plugins.java.api.tree.MethodInvocationTree;
 import org.sonar.plugins.java.api.tree.MethodTree;
 import org.sonar.plugins.java.api.tree.NewArrayTree;
 import org.sonar.plugins.java.api.tree.NewClassTree;
+import org.sonar.plugins.java.api.tree.ThrowStatementTree;
 import org.sonar.plugins.java.api.tree.Tree;
+import org.sonar.plugins.java.api.tree.TryStatementTree;
 import org.sonar.plugins.java.api.tree.TypeCastTree;
 import org.sonar.plugins.java.api.tree.UnaryExpressionTree;
 import org.sonar.plugins.java.api.tree.VariableTree;
@@ -113,6 +116,7 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
   private boolean cleanup = true;
   private final MethodBehaviorRoster behaviorRoster;
   private final MethodBehavior methodBehavior;
+  private ExceptionGraphWalker exceptionWalker;
 
   public static class ExplodedGraphTooBigException extends RuntimeException {
     public ExplodedGraphTooBigException(String s) {
@@ -177,6 +181,7 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
     }
     programState = ProgramState.EMPTY_STATE;
     steps = 0;
+    exceptionWalker = new ExceptionGraphWalker(cfg);
     methodBehavior.setMethodSymbol(tree.symbol());
     for (ProgramState startingState : startingStates(tree, programState)) {
       enqueue(new ExplodedGraph.ProgramPoint(cfg.entry(), 0), startingState);
@@ -320,6 +325,11 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
           break;
         case RETURN_STATEMENT:
           methodBehavior.addYield(programState);
+          break;
+        case THROW_STATEMENT:
+          ProgramState.Pop pop = programState.unstackValue(1);
+          ProgramState state = pop.state.stackValue(constraintManager.createSymbolicExceptionValue((ThrowStatementTree) terminator));
+          methodBehavior.addYield(state);
           break;
         default:
           // do nothing by default.
@@ -824,5 +834,47 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
 
   public void notifyPotentialNullPointer(SymbolicValue value, MemberSelectExpressionTree syntaxNode) {
     methodBehavior.notifyPotentialNullPointer(value, syntaxNode);
+  }
+
+  public void processNextStep() {
+    if (programPosition.i < programPosition.block.elements().size()) {
+      clearStack(programPosition.block.elements().get(programPosition.i));
+    }
+    if (programState.peekValue() instanceof SymbolicExceptionValue) {
+      processException((SymbolicExceptionValue) programState.peekValue());
+    } else {
+      enqueue(
+        new ExplodedGraph.ProgramPoint(programPosition.block, programPosition.i + 1),
+        programState, node.exitPath);
+    }
+  }
+
+  private void processException(SymbolicExceptionValue exceptionValue) {
+    Tree location = programPosition.block.elements().get(programPosition.i);
+    Tree parent = location.parent();
+    while (parent != null) {
+      if (parent.is(Tree.Kind.TRY_STATEMENT) && processNextCatch((TryStatementTree) parent, exceptionValue)) {
+        break;
+      }
+      parent = parent.parent();
+    }
+    if (parent == null) {
+      enqueue(
+        new ExplodedGraph.ProgramPoint(exceptionWalker.lastBlock(), 0), programState, false);
+    }
+  }
+
+  private boolean processNextCatch(TryStatementTree tryStatement, SymbolicExceptionValue exceptionValue) {
+    CFG.Block block = exceptionWalker.catchBlock(tryStatement, exceptionValue);
+    boolean exitPath = false;
+    if (block == null) {
+      block = exceptionWalker.finallyBlock(tryStatement);
+      exitPath = true;
+      if (block == null) {
+        return false;
+      }
+    }
+    enqueue(new ExplodedGraph.ProgramPoint(block, 0), programState, false);
+    return true;
   }
 }

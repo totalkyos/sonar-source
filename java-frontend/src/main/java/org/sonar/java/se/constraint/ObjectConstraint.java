@@ -23,9 +23,18 @@ import org.sonar.plugins.java.api.tree.Tree;
 
 import javax.annotation.Nullable;
 
+import java.util.Objects;
+
 public class ObjectConstraint implements Constraint {
 
   public static final ObjectConstraint NOT_NULL = new ObjectConstraint(false, true, null, null);
+
+  public static Constraint CONFLICT = new Constraint() {
+    @Override
+    public boolean isNull() {
+      return false;
+    }
+  };
 
   private final boolean isNull;
   private final boolean disposable;
@@ -95,5 +104,19 @@ public class ObjectConstraint implements Constraint {
       buffer.append(')');
     }
     return buffer.toString();
+  }
+
+  public static Constraint or(Constraint c1, Constraint c2) {
+    if (c1 == null || c2 == null) {
+      return null;
+    }
+    if (c1.getClass().equals(c2.getClass())) {
+      if (c1 instanceof BooleanConstraint) {
+        return ((BooleanConstraint) c1).isTrue() == ((BooleanConstraint) c2).isTrue() ? c1 : null;
+      } else if (c1 instanceof ObjectConstraint && (Objects.equals(((ObjectConstraint) c1).status, ((ObjectConstraint) c2).status))) {
+        return c1.isNull() == c2.isNull() ? c1 : null;
+      }
+    }
+    return CONFLICT;
   }
 }

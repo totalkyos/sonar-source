@@ -124,7 +124,7 @@ public class JavaCheckVerifierTest {
   public void verify_with_provided_classes() {
     IssuableSubscriptionVisitor visitor = new FakeVisitor().withDefaultIssues();
 
-    JavaCheckVerifier.verify(FILENAME_ISSUES, visitor, new ArrayList<File>());
+    JavaCheckVerifier.verify(FILENAME_ISSUES, new ArrayList<File>(), visitor);
   }
 
   @Test
