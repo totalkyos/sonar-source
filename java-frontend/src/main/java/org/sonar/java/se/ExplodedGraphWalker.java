@@ -875,6 +875,8 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
       parent = parent.parent();
     }
     if (parent == null) {
+      // Uncaught exception causes method exit: put the exception as method yield
+      methodBehavior.addYield(programState, constraintManager);
       enqueue(
         new ExplodedGraph.ProgramPoint(exceptionWalker.lastBlock(), 0), programState, false);
     }
