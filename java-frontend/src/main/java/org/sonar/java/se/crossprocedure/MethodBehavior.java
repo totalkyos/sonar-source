@@ -80,7 +80,11 @@ public class MethodBehavior {
       state = state.removeConstraint(result);
       state = createResult(state, constraintManager, constraint);
     }
-    MethodYield newYield = new MethodYield(this, state);
+    addVoidYield(state, constraintManager);
+  }
+
+  public void addVoidYield(ProgramState programState, ConstraintManager constraintManager) {
+    MethodYield newYield = new MethodYield(this, programState);
     for (MethodYield yield : yields) {
       if (yield.equivalentTo(newYield)) {
         return;

@@ -67,6 +67,7 @@ import org.sonar.plugins.java.api.tree.MethodInvocationTree;
 import org.sonar.plugins.java.api.tree.MethodTree;
 import org.sonar.plugins.java.api.tree.NewArrayTree;
 import org.sonar.plugins.java.api.tree.NewClassTree;
+import org.sonar.plugins.java.api.tree.ReturnStatementTree;
 import org.sonar.plugins.java.api.tree.ThrowStatementTree;
 import org.sonar.plugins.java.api.tree.Tree;
 import org.sonar.plugins.java.api.tree.TryStatementTree;
@@ -330,7 +331,16 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
           resetFieldValues();
           break;
         case RETURN_STATEMENT:
-          methodBehavior.addYield(programState, constraintManager);
+          ProgramState ps = programState;
+          if (methodBehavior.isConstructor()) {
+            ps = ps.stackValue(constraintManager.createSymbolicValue(terminator));
+          }
+          ReturnStatementTree returnStatement = (ReturnStatementTree) terminator;
+          if (returnStatement.expression() == null) {
+            methodBehavior.addVoidYield(ps, constraintManager);
+          } else {
+            methodBehavior.addYield(ps, constraintManager);
+          }
           break;
         case THROW_STATEMENT:
           ProgramState.Pop pop = programState.unstackValue(1);

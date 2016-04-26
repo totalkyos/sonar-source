@@ -58,9 +58,11 @@ public class MethodInvocationYield {
         return null;
       }
     }
-    state = state.stackValue(resultValue);
-    if (isNonNullMethod(mit.symbol())) {
-      return state.addConstraint(resultValue, ObjectConstraint.NOT_NULL);
+    if (resultValue != null) {
+      state = state.stackValue(resultValue);
+      if (isNonNullMethod(mit.symbol())) {
+        return state.addConstraint(resultValue, ObjectConstraint.NOT_NULL);
+      }
     }
     return state;
   }
@@ -106,7 +108,11 @@ public class MethodInvocationYield {
   @Override
   public String toString() {
     StringBuilder buffer = new StringBuilder();
-    buffer.append(resultValue);
+    if (resultValue == null) {
+      buffer.append("<void>");
+    } else {
+      buffer.append(resultValue);
+    }
     String delimiter = "\twhen: ";
     for (MethodInvocationConstraint entry : constraints) {
       buffer.append(delimiter);
