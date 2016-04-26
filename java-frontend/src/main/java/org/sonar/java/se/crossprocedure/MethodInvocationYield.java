@@ -27,13 +27,13 @@ import org.sonar.plugins.java.api.semantic.Symbol;
 import org.sonar.plugins.java.api.tree.MethodInvocationTree;
 
 import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 public class MethodInvocationYield {
 
@@ -41,7 +41,7 @@ public class MethodInvocationYield {
   private final List<MethodInvocationConstraint> constraints = new ArrayList<>();
   private final Map<SymbolicValue, PotentialNullPointer> potentialNullPointers = new HashMap<>();
 
-  public MethodInvocationYield(SymbolicValue resultValue) {
+  public MethodInvocationYield(@Nonnull SymbolicValue resultValue) {
     this.resultValue = resultValue;
   }
 
@@ -58,11 +58,9 @@ public class MethodInvocationYield {
         return null;
       }
     }
-    if (resultValue != null) {
-      state = state.stackValue(resultValue);
-      if (isNonNullMethod(mit.symbol())) {
-        return state.addConstraint(resultValue, ObjectConstraint.NOT_NULL);
-      }
+    state = state.stackValue(resultValue);
+    if (isNonNullMethod(mit.symbol())) {
+      return state.addConstraint(resultValue, ObjectConstraint.NOT_NULL);
     }
     return state;
   }
@@ -103,30 +101,5 @@ public class MethodInvocationYield {
       messages.add(potentialNullPointer.issueMessage(mit));
     }
     return messages;
-  }
-
-  @Override
-  public String toString() {
-    StringBuilder buffer = new StringBuilder();
-    if (resultValue == null) {
-      buffer.append("<void>");
-    } else {
-      buffer.append(resultValue);
-    }
-    String delimiter = "\twhen: ";
-    for (MethodInvocationConstraint entry : constraints) {
-      buffer.append(delimiter);
-      buffer.append(entry);
-      delimiter = ", ";
-    }
-    delimiter = "\tNPE: ";
-    for (Entry<SymbolicValue, PotentialNullPointer> entry : potentialNullPointers.entrySet()) {
-      buffer.append(delimiter);
-      buffer.append(entry.getKey());
-      buffer.append(':');
-      buffer.append(entry.getValue());
-      delimiter = ", ";
-    }
-    return buffer.toString();
   }
 }

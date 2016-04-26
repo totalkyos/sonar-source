@@ -56,10 +56,6 @@ public class MethodBehavior {
     methodSymbol = symbol;
   }
 
-  public Symbol getMethodSymbol() {
-    return methodSymbol;
-  }
-
   public void addYield(ProgramState programState, ConstraintManager constraintManager) {
     ProgramState.Pop pop = programState.unstackValue(1);
     ProgramState state = pop.state;
@@ -72,7 +68,14 @@ public class MethodBehavior {
       state = createResult(state, constraintManager, BooleanConstraint.FALSE);
     } else if (result instanceof SymbolicExceptionValue || parameterValues.contains(result)) {
       state = programState;
-    } else if (methodResult == null && !(result instanceof RelationalSymbolicValue)) {
+    } else if (result instanceof RelationalSymbolicValue) {
+      state = state.removeConstraint(result);
+      state = createResult(state, constraintManager, BooleanConstraint.TRUE);
+      state = state.addConstraint(result, BooleanConstraint.TRUE);
+      ProgramState falseState = state.addConstraint(methodResult, BooleanConstraint.FALSE);
+      falseState = falseState.addConstraint(result, BooleanConstraint.FALSE);
+      addVoidYield(falseState);
+    } else if (methodResult == null) {
       methodResult = result;
       state = programState;
     } else {
@@ -80,10 +83,10 @@ public class MethodBehavior {
       state = state.removeConstraint(result);
       state = createResult(state, constraintManager, constraint);
     }
-    addVoidYield(state, constraintManager);
+    addVoidYield(state);
   }
 
-  public void addVoidYield(ProgramState programState, ConstraintManager constraintManager) {
+  public void addVoidYield(ProgramState programState) {
     MethodYield newYield = new MethodYield(this, programState);
     for (MethodYield yield : yields) {
       if (yield.equivalentTo(newYield)) {
@@ -107,26 +110,8 @@ public class MethodBehavior {
     parameterValues.add(sv);
   }
 
-  public Iterable<SymbolicValue> parameterValues() {
-    return parameterValues;
-  }
-
   public Set<Symbol> symbolSet() {
     return new HashSet<>(parameters);
-  }
-
-  public List<SymbolicValue> parameterValues(ProgramState state) {
-    List<SymbolicValue> values = new ArrayList<>();
-    for (Symbol symbol : parameters) {
-      if (!symbol.isVariableSymbol()) {
-        values.add(state.getValue(symbol));
-      }
-    }
-    return values;
-  }
-
-  public boolean hasYield() {
-    return !yields.isEmpty();
   }
 
   Set<SymbolicValue> parameterSet() {

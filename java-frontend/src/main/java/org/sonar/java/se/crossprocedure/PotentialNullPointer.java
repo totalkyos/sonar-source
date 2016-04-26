@@ -41,10 +41,6 @@ public class PotentialNullPointer {
     this.syntaxNode = syntaxNode;
   }
 
-  public Symbol getMethodSymbol() {
-    return methodSymbol;
-  }
-
   public Integer getIndex() {
     return Integer.valueOf(index);
   }
@@ -68,17 +64,5 @@ public class PotentialNullPointer {
     }
     return MessageFormat.format("Parameter {0} of method ''{1}'' may be null and shall cause a NullPointerException at line {2} of method ''{3}''",
       getIndex(), mit.symbol().name(), getErrorLine(), methodSymbol.name());
-  }
-
-  @Override
-  public String toString() {
-    StringBuilder buffer = new StringBuilder();
-    buffer.append("NPE(");
-    buffer.append(index);
-    buffer.append("): ");
-    buffer.append(value);
-    buffer.append(" -> line ");
-    buffer.append(getErrorLine());
-    return buffer.toString();
   }
 }

@@ -48,4 +48,10 @@ public class CrossProceduralTest {
       new UnclosedResourcesCheck());
   }
 
+  @Test
+  public void coverage() {
+    JavaCheckVerifier.verifyNoIssue("src/test/files/se/CrossProceduralCoverage.java", new NullDereferenceCheck(), new ConditionAlwaysTrueOrFalseCheck(),
+      new UnclosedResourcesCheck());
+  }
+
 }

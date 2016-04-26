@@ -337,7 +337,7 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
           }
           ReturnStatementTree returnStatement = (ReturnStatementTree) terminator;
           if (returnStatement.expression() == null) {
-            methodBehavior.addVoidYield(ps, constraintManager);
+            methodBehavior.addVoidYield(ps);
           } else {
             methodBehavior.addYield(ps, constraintManager);
           }

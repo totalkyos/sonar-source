@@ -69,17 +69,4 @@ public class MethodInvocationConstraint {
     }
     return null;
   }
-
-  @Override
-  public String toString() {
-    StringBuilder buffer = new StringBuilder();
-    if (atomicConstraint == null) {
-      buffer.append(relationValue);
-      buffer.append("->");
-      buffer.append(yieldConstraint);
-    } else {
-      buffer.append(atomicConstraint);
-    }
-    return buffer.toString();
-  }
 }

@@ -36,6 +36,19 @@ public abstract class CrossProcedural {
       }
     }
   }
+  
+  public void callerBracketing(Integer a, Integer b) {
+    if (bracketing(a, b)) {
+      if (a > b) {  // Noncompliant {{Change this condition so that it does not always evaluate to "false"}}
+        log("redundant");
+      }
+    }
+    if (b < a) {
+      if (bracketing(a, b)) {  // Noncompliant {{Change this condition so that it does not always evaluate to "false"}}
+        log("still redundant");
+      }
+    }
+  }
 
   public Object select(Object pa, Object pb, Object pc) {
     if (pa == pb) {
@@ -99,8 +112,16 @@ public abstract class CrossProcedural {
     return a.toString();
   }
   
+  public void callerIsNullDirect(Object b){
+    if (isNullDirect(b)) {
+      if (b == null) {  // Noncompliant {{Change this condition so that it does not always evaluate to "true"}}
+        log("redundant");
+      }
+    }
+  }
+  
 
-  public boolean isNull(Object b){
+  private boolean isNull(Object b){
     if( b == null ) {
       return true;
     } else {
@@ -108,7 +129,7 @@ public abstract class CrossProcedural {
     }
   }
   
-  public int compute(Object b){
+  private int compute(Object b){
     return b.hashCode();
   }
 
@@ -146,6 +167,24 @@ public abstract class CrossProcedural {
       n += object.hashCode();
     }
     return n;
+  }
+  
+  private boolean bracketing(Integer a, Integer b) {
+    int c = 0;
+    if (a > c) {
+      return false;
+    }
+    if (b < c) {
+      return false;
+    }
+    if (a + b < c) {
+      log("check");
+    }
+    return true;
+  }
+  
+  private boolean isNullDirect(Object a) {
+    return a == null;
   }
 
   public abstract boolean otherMethod();
