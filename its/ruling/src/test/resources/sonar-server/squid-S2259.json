@@ -11,9 +11,6 @@
 'org.codehaus.sonar:sonar-server:src/main/java/org/sonar/server/db/migrations/v51/FeedSnapshotsLongDates.java':[
 54,
 ],
-'org.codehaus.sonar:sonar-server:src/main/java/org/sonar/server/permission/InternalPermissionService.java':[
-242,
-],
 'org.codehaus.sonar:sonar-server:src/main/java/org/sonar/server/plugins/ServerExtensionInstaller.java':[
 51,
 ],

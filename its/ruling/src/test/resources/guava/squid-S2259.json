@@ -9,6 +9,9 @@
 'com.google.guava:guava:src/com/google/common/cache/CacheBuilderSpec.java':[
 418,
 ],
+'com.google.guava:guava:src/com/google/common/collect/StandardTable.java':[
+814,
+],
 'com.google.guava:guava:src/com/google/common/net/HostAndPort.java':[
 194,
 ],
