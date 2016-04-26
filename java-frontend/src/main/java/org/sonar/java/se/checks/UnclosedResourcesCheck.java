@@ -244,9 +244,8 @@ public class UnclosedResourcesCheck extends SECheck {
     public void visitAssignmentExpression(AssignmentExpressionTree syntaxNode) {
       final ExpressionTree variable = syntaxNode.variable();
       if (isNonLocalStorage(variable)) {
-        int stackSize = variable.is(Tree.Kind.ARRAY_ACCESS_EXPRESSION) ? 2 : 1;
-        List<SymbolicValue> stackedValues = programState.peekValues(stackSize);
-        SymbolicValue value = stackedValues.get(stackSize - 1);
+        List<SymbolicValue> stackedValues = programState.peekValues(2);
+        SymbolicValue value = stackedValues.get(1);
         closeResource(value);
       }
     }

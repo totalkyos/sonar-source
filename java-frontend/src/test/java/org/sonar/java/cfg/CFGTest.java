@@ -497,6 +497,7 @@ public class CFGTest {
         element(Tree.Kind.VARIABLE, "a"),
         element(Tree.Kind.IDENTIFIER, "getObject"),
         element(Tree.Kind.METHOD_INVOCATION),
+        element(Tree.Kind.IDENTIFIER, "a"),
         element(Tree.Kind.ASSIGNMENT)).successors(0));
     cfgChecker.check(cfg);
   }
@@ -791,6 +792,7 @@ public class CFGTest {
             element(Kind.METHOD_INVOCATION)).terminator(Kind.IF_STATEMENT).ifTrue(2).ifFalse(1),
         block(
             element(Kind.IDENTIFIER, "n"),
+            element(Kind.IDENTIFIER, "relativePath"),
             element(Kind.ASSIGNMENT)).successors(1),
         block(element(Kind.VARIABLE, "n")).terminator(Kind.FOR_EACH_STATEMENT).ifFalse(0).ifTrue(3)
         );
@@ -1029,6 +1031,7 @@ public class CFGTest {
       ).successors(5, 4).exit(4),
       block(
         element(Kind.NEW_CLASS),
+        element(Kind.IDENTIFIER, "bar"),
         element(Kind.ASSIGNMENT)
       ).successors(4),
       block(
@@ -1231,6 +1234,7 @@ public class CFGTest {
         element(Tree.Kind.METHOD_INVOCATION),
         element(Tree.Kind.IDENTIFIER, "a"),
         element(Tree.Kind.TYPE_CAST),
+        element(Tree.Kind.IDENTIFIER, "a"),
         element(Tree.Kind.PLUS_ASSIGNMENT)
         ).successors(0));
     cfgChecker.check(cfg);
