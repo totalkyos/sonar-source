@@ -32,6 +32,7 @@ import org.sonar.java.se.symbolicvalues.SymbolicExceptionValue;
 import org.sonar.java.se.symbolicvalues.SymbolicValue;
 import org.sonar.plugins.java.api.semantic.Symbol;
 import org.sonar.plugins.java.api.tree.MemberSelectExpressionTree;
+import org.sonar.plugins.java.api.tree.MethodTree;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -50,7 +51,6 @@ public class MethodBehavior {
   private final List<SymbolicValue> parameterValues = new ArrayList<>();
   private final List<MethodYield> yields = new ArrayList<>();
   private final List<PotentialNullPointer> potentialNullPointers = new ArrayList<>();
-  private boolean executionSink;
   private SymbolicValue methodResult;
 
   public MethodBehavior(Symbol symbol) {
@@ -194,12 +194,9 @@ public class MethodBehavior {
     }
   }
 
-  public void notifyExecutionSink() {
-    executionSink = true;
-  }
-
   public boolean hasBeenProcessed() {
-    return !methodSymbol.isAbstract() && !methodSymbol.isNative() && !executionSink;
+    MethodTree tree = (MethodTree) methodSymbol.declaration();
+    return tree.block() != null;
   }
 
   public boolean isConstructor() {

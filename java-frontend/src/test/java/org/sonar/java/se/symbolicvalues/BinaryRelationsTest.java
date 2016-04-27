@@ -598,5 +598,40 @@ public class BinaryRelationsTest {
     BinaryRelation.addRelation(relations, relation(Kind.GREATER_THAN_OR_EQUAL, SVa, SVb));
     assertThat(relations).hasSize(2);
     assertThat(relation(Kind.EQUAL, SVa, SVb).resolveState(relations)).isEqualTo(RelationState.FULFILLED);
+    BinaryRelation.addRelation(relations, relation(Kind.GREATER_THAN, SVc, SVa));
+    assertThat(relations).hasSize(2);
+    BinaryRelation.addRelation(relations, relation(Kind.NOT_EQUAL, SVa, SVc));
+    assertThat(relations).hasSize(2);
+  }
+
+  @Test
+  public void testConversion() {
+    BinaryRelation relation = relation(Kind.LESS_THAN_OR_EQUAL, SVa, SVb);
+    SymbolicValue value = relation.asValue();
+    assertThat(value).isInstanceOf(RelationalSymbolicValue.class);
+    RelationalSymbolicValue relValue = (RelationalSymbolicValue) value;
+    assertThat(relValue.leftOp).isSameAs(relation.leftOp());
+    assertThat(relValue.rightOp).isSameAs(relation.rightOp());
+  }
+
+  @Test
+  public void testConjunction() {
+    BinaryRelation rAB = relation(Kind.LESS_THAN_OR_EQUAL, SVa, SVb);
+    BinaryRelation rBA = relation(Kind.GREATER_THAN_OR_EQUAL, SVa, SVb);
+    assertThat(rAB.conjunction(rBA)).isEqualTo(relation(Kind.EQUAL, SVa, SVb));
+    try {
+      BinaryRelation rAC = relation(Kind.LESS_THAN_OR_EQUAL, SVa, SVc);
+      rAB.conjunction(rAC);
+      fail("conjunction between wrong relations!");
+    } catch (IllegalArgumentException e) {
+      // Expected behavior
+    }
+    try {
+      BinaryRelation rCB = relation(Kind.LESS_THAN_OR_EQUAL, SVc, SVb);
+      rAB.conjunction(rCB);
+      fail("conjunction between wrong relations!");
+    } catch (IllegalArgumentException e) {
+      // Expected behavior
+    }
   }
 }

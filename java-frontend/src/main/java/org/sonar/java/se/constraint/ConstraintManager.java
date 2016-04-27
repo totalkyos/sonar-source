@@ -26,6 +26,7 @@ import org.sonar.java.se.ProgramState;
 import org.sonar.java.se.SymbolicValueFactory;
 import org.sonar.java.se.symbolicvalues.NullCheckSymbolicValue;
 import org.sonar.java.se.symbolicvalues.RelationalSymbolicValue;
+import org.sonar.java.se.symbolicvalues.SymbolicClassExceptionValue;
 import org.sonar.java.se.symbolicvalues.SymbolicExceptionValue;
 import org.sonar.java.se.symbolicvalues.SymbolicValue;
 import org.sonar.java.se.symbolicvalues.SymbolicValueAdapter;
@@ -47,6 +48,7 @@ public class ConstraintManager {
   private int counter = ProgramState.EMPTY_STATE.constraintsSize();
   private SymbolicValueFactory symbolicValueFactory;
   private Map<ThrowStatementTree, SymbolicValue> exceptionValues = new HashMap<>();
+  private Map<Class<? extends Throwable>, SymbolicValue> classExceptionValues = new HashMap<>();
 
   public void setValueFactory(SymbolicValueFactory valueFactory) {
     Preconditions.checkState(symbolicValueFactory == null, "The symbolic value factory has already been defined by another checker!");
@@ -190,6 +192,16 @@ public class ConstraintManager {
       exceptionValue = new SymbolicExceptionValue(counter, throwTree.expression().symbolType());
       counter++;
       exceptionValues.put(throwTree, exceptionValue);
+    }
+    return exceptionValue;
+  }
+
+  public <T extends Throwable> SymbolicValue createSymbolicExceptionValue(Class<T> clazz) {
+    SymbolicValue exceptionValue = classExceptionValues.get(clazz);
+    if (exceptionValue == null) {
+      exceptionValue = new SymbolicClassExceptionValue(counter, clazz);
+      counter++;
+      classExceptionValues.put(clazz, exceptionValue);
     }
     return exceptionValue;
   }
