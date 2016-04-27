@@ -183,7 +183,6 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
     programState = ProgramState.EMPTY_STATE;
     steps = 0;
     exceptionWalker = new ExceptionGraphWalker(cfg);
-    methodBehavior.setMethodSymbol(tree.symbol());
     for (ProgramState startingState : startingStates(tree, programState)) {
       enqueue(new ExplodedGraph.ProgramPoint(cfg.entry(), 0), startingState);
     }

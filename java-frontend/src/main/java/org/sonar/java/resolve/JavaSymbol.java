@@ -25,7 +25,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multiset;
-
 import org.sonar.plugins.java.api.semantic.Symbol;
 import org.sonar.plugins.java.api.semantic.Type;
 import org.sonar.plugins.java.api.tree.ClassTree;
@@ -204,6 +203,11 @@ public class JavaSymbol implements Symbol {
   @Override
   public boolean isAbstract() {
     return isFlag(Flags.ABSTRACT);
+  }
+
+  @Override
+  public boolean isNative() {
+    return isFlag(Flags.NATIVE);
   }
 
   @Override

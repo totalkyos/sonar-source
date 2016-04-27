@@ -82,6 +82,12 @@ public abstract class CrossProcedural {
   
   public void callerAbstract() {
     otherMethod();
+    log("Abstract method called");
+    Object a = new String("a");
+    abstractMethodWithParameters(a, null);
+    log("Abstract method with parameters called");
+    nativeMethodWithParameters(a, null);
+    log("Native method with parameters called");
   }
   
   public void callerVarArgs() {
@@ -188,4 +194,8 @@ public abstract class CrossProcedural {
   }
 
   public abstract boolean otherMethod();
+
+  public abstract boolean abstractMethodWithParameters(Object a, Object b);
+
+  public native boolean nativeMethodWithParameters(Object a, Object b);
 }

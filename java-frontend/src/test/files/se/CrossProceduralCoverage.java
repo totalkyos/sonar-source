@@ -1,5 +1,6 @@
 package javax.annotation;
 
+import java.lang.String;
 import org.apache.commons.lang.NullArgumentException;
 
 @interface Nonnull {}
@@ -71,4 +72,23 @@ public abstract class CrossProcedural {
   private boolean isString(Object a) {
     return a instanceof String;
   }
+}
+
+class A{
+  void method(int a){}
+  void method(String a){}
+  void method(String[] a){}
+  void method2(int a);
+}
+
+class B{
+  void foo(){
+    A a = new A();
+    a.method(1);
+    a.method("");
+    a.method(new String[]{""});
+    a.method2(1);
+  }
+
+  
 }

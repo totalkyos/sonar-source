@@ -28,8 +28,8 @@ import org.sonar.java.se.symbolicvalues.SymbolicExceptionValue;
 import org.sonar.java.se.symbolicvalues.SymbolicValue;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -56,15 +56,17 @@ public class MethodYield {
         RelationalSymbolicValue relationalValue = (RelationalSymbolicValue) value;
         RelationalSymbolicValue.AtomicConstraint atomic = relationalValue.convertToAtomic(state.getConstraint(value));
         if (atomic == null) {
-          relations.add(createRelation(relationalValue, constraint));
+          BinaryRelation.addRelation(relations, createRelation(relationalValue, constraint));
         } else {
           atomic.storeInto(constraints);
         }
       }
     }
     reduceRelations(relations, valueSet);
+    int id = -1;
     for (BinaryRelation relation : relations) {
-      constraints.put(relation.asValue(), BooleanConstraint.TRUE);
+      constraints.put(relation.asValue(id), BooleanConstraint.TRUE);
+      id -= 1;
     }
   }
 
@@ -133,12 +135,48 @@ public class MethodYield {
     if (!Objects.equals(myConstraints.remove(result), itsConstraints.remove(yield.result))) {
       return false;
     }
+    List<BinaryRelation> myRelations = collectRelations(myConstraints);
+    List<BinaryRelation> itsRelations = new ArrayList<>();
+    if (relationsDiffer(myRelations, itsRelations)) {
+      return false;
+    }
     for (Entry<SymbolicValue, Constraint> myEntry : myConstraints.entrySet()) {
       if (!myEntry.getValue().equals(itsConstraints.remove(myEntry.getKey()))) {
         return false;
       }
     }
     return itsConstraints.isEmpty();
+  }
+
+  private List<BinaryRelation> collectRelations(Map<SymbolicValue, Constraint> myConstraints) {
+    ArrayList<BinaryRelation> relations = new ArrayList<>();
+    Set<SymbolicValue> keys = new HashSet<>(myConstraints.keySet());
+    for (SymbolicValue value : keys) {
+      if (value instanceof RelationalSymbolicValue) {
+        BinaryRelation relation = value.binaryRelation();
+        Constraint constraint = myConstraints.remove(value);
+        if (BooleanConstraint.FALSE.equals(constraint)) {
+          relations.add(relation.inverse());
+        } else {
+          relations.add(relation);
+        }
+      }
+    }
+    return relations;
+  }
+
+  private boolean relationsDiffer(List<BinaryRelation> myRelations, List<BinaryRelation> itsRelations) {
+    for (BinaryRelation relation : myRelations) {
+      if (!relation.isFulFilled(itsRelations)) {
+        return false;
+      }
+    }
+    for (BinaryRelation relation : itsRelations) {
+      if (!relation.isFulFilled(myRelations)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override
@@ -181,7 +219,15 @@ public class MethodYield {
     }
   }
 
-  public Collection<? extends SymbolicValue> constrainedValues() {
-    return new ArrayList<>(constraints.keySet());
+  public List<SymbolicValue> constrainedValues() {
+    // For the moment, pruning is not done for relations
+    // One way is to use instances of BinaryRelation and convert other constraints into unary relations
+    ArrayList<SymbolicValue> values = new ArrayList<>();
+    for (SymbolicValue key : constraints.keySet()) {
+      if (!(key instanceof RelationalSymbolicValue)) {
+        values.add(key);
+      }
+    }
+    return values;
   }
 }

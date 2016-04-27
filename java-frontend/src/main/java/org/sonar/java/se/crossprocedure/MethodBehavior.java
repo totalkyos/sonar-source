@@ -21,6 +21,7 @@ package org.sonar.java.se.crossprocedure;
 
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.ListMultimap;
+import org.sonar.java.resolve.Symbols;
 import org.sonar.java.se.ProgramState;
 import org.sonar.java.se.constraint.BooleanConstraint;
 import org.sonar.java.se.constraint.Constraint;
@@ -44,7 +45,7 @@ import java.util.Set;
 
 public class MethodBehavior {
 
-  private Symbol methodSymbol = null;
+  private final Symbol methodSymbol;
   private final List<Symbol> parameters = new ArrayList<>();
   private final List<SymbolicValue> parameterValues = new ArrayList<>();
   private final List<MethodYield> yields = new ArrayList<>();
@@ -52,11 +53,19 @@ public class MethodBehavior {
   private boolean executionSink;
   private SymbolicValue methodResult;
 
-  public void setMethodSymbol(Symbol symbol) {
+  public MethodBehavior(Symbol symbol) {
     methodSymbol = symbol;
   }
 
+  public MethodBehavior() {
+    // Needed for EGW tests
+    methodSymbol = Symbols.unknownMethodSymbol;
+  }
+
   public void addYield(ProgramState programState, ConstraintManager constraintManager) {
+    if (methodSymbol.isUnknown()) {
+      return;
+    }
     ProgramState.Pop pop = programState.unstackValue(1);
     ProgramState state = pop.state;
     SymbolicValue result = pop.values.get(0);
@@ -189,8 +198,8 @@ public class MethodBehavior {
     executionSink = true;
   }
 
-  public boolean isExecutionSink() {
-    return executionSink;
+  public boolean hasBeenProcessed() {
+    return !methodSymbol.isAbstract() && !methodSymbol.isNative() && !executionSink;
   }
 
   public boolean isConstructor() {

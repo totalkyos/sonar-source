@@ -30,8 +30,8 @@ import org.sonar.java.se.checks.UnclosedResourcesCheck;
 import org.sonar.java.se.crossprocedure.MethodBehavior;
 import org.sonar.java.se.crossprocedure.MethodBehaviorRoster;
 import org.sonar.plugins.java.api.JavaFileScanner;
-import org.sonar.plugins.java.api.tree.MethodInvocationTree;
 import org.sonar.plugins.java.api.semantic.Symbol;
+import org.sonar.plugins.java.api.tree.MethodInvocationTree;
 import org.sonar.plugins.java.api.tree.Tree;
 
 import java.util.Collections;

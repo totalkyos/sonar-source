@@ -588,4 +588,15 @@ public class BinaryRelationsTest {
   public void testToString() {
     assertThat(relation(EQUAL, SVa, SVb).toString()).isEqualTo("SV_0==SV_1");
   }
+
+  @Test
+  public void testAddRelation() {
+    List<BinaryRelation> relations = new ArrayList<>();
+    BinaryRelation.addRelation(relations, relation(Kind.LESS_THAN_OR_EQUAL, SVa, SVb));
+    BinaryRelation.addRelation(relations, relation(Kind.LESS_THAN_OR_EQUAL, SVa, SVc));
+    assertThat(relations).hasSize(2);
+    BinaryRelation.addRelation(relations, relation(Kind.GREATER_THAN_OR_EQUAL, SVa, SVb));
+    assertThat(relations).hasSize(2);
+    assertThat(relation(Kind.EQUAL, SVa, SVb).resolveState(relations)).isEqualTo(RelationState.FULFILLED);
+  }
 }

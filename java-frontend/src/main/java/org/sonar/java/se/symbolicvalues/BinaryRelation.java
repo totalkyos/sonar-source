@@ -73,8 +73,33 @@ public abstract class BinaryRelation {
         throw new IllegalStateException("Creation of relation of kind " + kind + " is missing!");
     }
     return relation;
+  }
 
-
+  public static void addRelation(List<BinaryRelation> relations, BinaryRelation newRelation) {
+    if (newRelation.isFulFilled(relations)) {
+      // No need to add since already fulfilled
+      return;
+    }
+    for (int i = 0; i < relations.size(); i++) {
+      BinaryRelation relation = relations.get(i);
+      RelationState state = newRelation.implies(relation);
+      if (RelationState.FULFILLED.equals(state)) {
+        relations.set(i, newRelation);
+        return;
+      } else {
+        if (relation.leftOp.equals(newRelation.rightOp)) {
+          relation = relation.symmetric();
+        }
+        if (relation.leftOp.equals(newRelation.leftOp) && relation.rightOp.equals(newRelation.rightOp)) {
+          BinaryRelation conjunction = relation.conjunction(newRelation);
+          if (conjunction != null) {
+            relations.set(i, conjunction);
+            return;
+          }
+        }
+      }
+    }
+    relations.add(newRelation);
   }
 
 
@@ -101,7 +126,11 @@ public abstract class BinaryRelation {
   }
 
   public SymbolicValue asValue() {
-    RelationalSymbolicValue value = new RelationalSymbolicValue(-1, kind);
+    return asValue(-1);
+  }
+
+  public SymbolicValue asValue(int id) {
+    RelationalSymbolicValue value = new RelationalSymbolicValue(id, kind);
     value.computedFrom(Lists.newArrayList(rightOp, leftOp));
     return value;
   }
@@ -141,6 +170,11 @@ public abstract class BinaryRelation {
     buffer.append(kind.operand);
     buffer.append(rightOp);
     return buffer.toString();
+  }
+
+  public boolean isFulFilled(Collection<BinaryRelation> relations) {
+    RelationState state = resolveState(relations);
+    return RelationState.FULFILLED.equals(state);
   }
 
   protected RelationState resolveState(Collection<BinaryRelation> knownRelations) {

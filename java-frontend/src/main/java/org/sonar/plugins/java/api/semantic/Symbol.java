@@ -75,6 +75,8 @@ public interface Symbol {
 
   boolean isAbstract();
 
+  boolean isNative();
+
   boolean isPublic();
 
   boolean isPrivate();

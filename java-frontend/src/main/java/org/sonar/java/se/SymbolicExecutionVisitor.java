@@ -71,10 +71,10 @@ public class SymbolicExecutionVisitor extends SubscriptionVisitor implements Met
   private void process(Symbol symbol) {
     Tree tree = symbol.declaration();
     try {
-      MethodBehavior behavior = new MethodBehavior();
+      MethodBehavior behavior = new MethodBehavior(symbol);
       ExplodedGraphWalker walker = egwFactory.createWalker(behavior, this);
       tree.accept(walker);
-      if (!symbol.isAbstract() && !behavior.isExecutionSink()) {
+      if (behavior.hasBeenProcessed()) {
         behavior.pruneYields();
         behaviors.put(symbol, behavior);
       }
