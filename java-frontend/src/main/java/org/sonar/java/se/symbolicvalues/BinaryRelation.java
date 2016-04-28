@@ -75,6 +75,16 @@ public abstract class BinaryRelation {
     return relation;
   }
 
+  /**
+   * Add a new relation to a list of existing relations.
+   * This method is the central piece for all manipulation of relations. So far, it is assumed that the relation to be added
+   * does not contradict the list of existing relations. But, it be adapted to cover this case.
+   * 
+   * See the example of the test case.
+   * 
+   * @param relations list of relations
+   * @param newRelation relation to be added
+   */
   public static void addRelation(List<BinaryRelation> relations, BinaryRelation newRelation) {
     if (newRelation.isFulFilled(relations)) {
       // No need to add since already fulfilled
@@ -125,11 +135,11 @@ public abstract class BinaryRelation {
     hashcode = Objects.hash(kind, leftOp, rightOp);
   }
 
-  public SymbolicValue asValue() {
+  public RelationalSymbolicValue asValue() {
     return asValue(-1);
   }
 
-  public SymbolicValue asValue(int id) {
+  public RelationalSymbolicValue asValue(int id) {
     RelationalSymbolicValue value = new RelationalSymbolicValue(id, kind);
     value.computedFrom(Lists.newArrayList(rightOp, leftOp));
     return value;

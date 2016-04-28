@@ -125,7 +125,21 @@ public abstract class CrossProcedural {
       }
     }
   }
-  
+
+  public void callerPotentialCause(boolean state) {
+    if (state) {
+      potentialCause("Yes, we can!", state);  // Compliant
+    } else {
+      potentialCause(null, state);  // Compliant
+    }
+    potentialCause(null, true);  // Noncompliant {{Parameter 1 of method 'potentialCause' may be null and shall cause a NullPointerException at line 140 of that method}}
+  }
+
+  private void potentialCause(Object a, boolean error) {
+    if (error) {
+      a.hash();
+    }
+  }
 
   private boolean isNull(Object b){
     if( b == null ) {

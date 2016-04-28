@@ -19,6 +19,7 @@
  */
 package org.sonar.java.se.crossprocedure;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.ListMultimap;
 import org.sonar.java.resolve.Symbols;
@@ -54,12 +55,13 @@ public class MethodBehavior {
   private SymbolicValue methodResult;
 
   public MethodBehavior(Symbol symbol) {
-    methodSymbol = symbol;
+    Preconditions.checkNotNull(symbol);
+    methodSymbol = (Symbol.MethodSymbol) symbol;
   }
 
   public MethodBehavior() {
     // Needed for EGW tests
-    methodSymbol = Symbols.unknownMethodSymbol;
+    this(Symbols.unknownMethodSymbol);
   }
 
   public void addYield(ProgramState programState, ConstraintManager constraintManager) {
@@ -200,7 +202,11 @@ public class MethodBehavior {
   }
 
   public boolean isConstructor() {
-    return methodSymbol != null && "<init>".equals(methodSymbol.name());
+    return "<init>".equals(methodSymbol.name());
+  }
+
+  public boolean isVoidMethod() {
+    return methodSymbol.isMethodSymbol() && ((Symbol.MethodSymbol) methodSymbol).returnType().type().isVoid();
   }
 
   @Override

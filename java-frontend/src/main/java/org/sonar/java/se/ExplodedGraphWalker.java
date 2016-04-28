@@ -197,12 +197,7 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
       programPosition = node.programPoint;
       programState = node.programState;
       if (programPosition.block.successors().isEmpty()) {
-        checkerDispatcher.executeCheckEndOfExecutionPath(constraintManager);
-        if (methodBehavior.isConstructor()) {
-          ProgramState state = programState.stackValue(constraintManager.createSymbolicValue(tree));
-          state = state.addConstraint(state.peekValue(), ObjectConstraint.NOT_NULL);
-          methodBehavior.addYield(state, constraintManager);
-        }
+        handleEndOfExecutionPath(tree);
         LOG.debug("End of potential path reached!");
         continue;
       }
@@ -236,6 +231,18 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
     node = null;
     programState = null;
     constraintManager = null;
+  }
+
+  private void handleEndOfExecutionPath(MethodTree tree) {
+    checkerDispatcher.executeCheckEndOfExecutionPath(constraintManager);
+    if (methodBehavior.isConstructor()) {
+      ProgramState state = programState.stackValue(constraintManager.createSymbolicValue(tree));
+      state = state.addConstraint(state.peekValue(), ObjectConstraint.NOT_NULL);
+      methodBehavior.addYield(state, constraintManager);
+    } else if (methodBehavior.isVoidMethod()) {
+      ProgramState state = programState.stackValue(SymbolicValue.NULL_LITERAL);
+      methodBehavior.addYield(state, constraintManager);
+    }
   }
 
   private Iterable<ProgramState> startingStates(MethodTree tree, ProgramState ps) {
@@ -544,13 +551,10 @@ public class ExplodedGraphWalker extends BaseTreeVisitor {
     if (behavior != null) {
       List<MethodInvocationYield> invocationYields = invocationYields(behavior, unstack, resultValue);
       resultingStates.addAll(resultStates(invocationYields, mit, unstack.state));
-      Type returnType = mit.symbolType();
-      if ((!returnType.isVoid() && !returnType.isUnknown()) || behavior.isConstructor()) {
-        if (resultingStates.isEmpty()) {
-          reportNoYieldIssues(mit, invocationYields);
-        }
-        return resultingStates;
+      if (resultingStates.isEmpty()) {
+        reportNoYieldIssues(mit, invocationYields);
       }
+      return resultingStates;
     }
     resultingStates.add(defaultResultState(mit, state, resultValue));
     return resultingStates;

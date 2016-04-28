@@ -183,7 +183,7 @@ public class RelationalSymbolicValue extends BinarySymbolicValue {
       value = leftOp;
       constraint = ProgramState.EMPTY_STATE.getConstraint(rightOp);
     }
-    if (myConstraint != null) {
+    if (myConstraint instanceof BooleanConstraint) {
       return createAtomicConstraint(value, constraint, myConstraint);
     }
     return null;
@@ -228,6 +228,9 @@ public class RelationalSymbolicValue extends BinarySymbolicValue {
 
     public ProgramState storeInto(ProgramState state) {
       Constraint previous = state.getConstraint(value);
+      if (previous instanceof BooleanConstraint && constraint instanceof BooleanConstraint && !previous.equals(constraint)) {
+        return null;
+      }
       if (previous != null && previous.isNull() ^ constraint.isNull()) {
         return null;
       }
