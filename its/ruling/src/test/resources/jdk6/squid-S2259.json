@@ -39,6 +39,9 @@
 129,
 131,
 ],
+'jdk6:java/beans/DefaultPersistenceDelegate.java':[
+220,
+],
 'jdk6:java/beans/MetaData.java':[
 738,
 ],
@@ -51,8 +54,11 @@
 'jdk6:java/lang/reflect/Proxy.java':[
 361,
 ],
+'jdk6:java/net/Socket.java':[
+524,
+532,
+],
 'jdk6:java/net/SocksSocketImpl.java':[
-398,
 714,
 ],
 'jdk6:java/net/URI.java':[
